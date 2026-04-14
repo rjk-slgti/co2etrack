@@ -32,6 +32,10 @@ export default function AuditorPortal() {
   };
 
   const viewEvidence = async (path: string) => {
+    if (path === 'mock_path') {
+      toast({ title: 'Mock Evidence', description: 'This is mock evidence stored locally. No file was uploaded.' });
+      return;
+    }
     const { data } = await supabase.storage.from('evidence').createSignedUrl(path, 60);
     if (data?.signedUrl) {
       window.open(data.signedUrl, '_blank');

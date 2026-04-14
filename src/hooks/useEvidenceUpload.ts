@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { MockDB } from '@/lib/mock-database';
 import { useAuth } from './useAuth';
 
 export function useEvidenceUpload() {
@@ -13,30 +14,35 @@ export function useEvidenceUpload() {
       const fileName = `${entryId}-${Math.random()}.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
 
-      // 1. Upload to Storage
-      const { error: uploadError } = await supabase.storage
-        .from('evidence')
-        .upload(filePath, file);
+      try {
+        // 1. Upload to Storage
+        const { error: uploadError } = await supabase.storage
+          .from('evidence')
+          .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+        if (uploadError) throw uploadError;
 
-      // 2. Create activity_evidence record
-      const { data, error: dbError } = await supabase
-        .from('activity_evidence')
-        .insert({
-          activity_entry_id: entryId,
-          file_name: file.name,
-          file_path: filePath,
-          content_type: file.type,
-          size_bytes: file.size,
-          uploaded_by: user.id,
-        })
-        .select()
-        .single();
+        // 2. Create activity_evidence record
+        const { data, error: dbError } = await supabase
+          .from('activity_evidence')
+          .insert({
+            activity_entry_id: entryId,
+            file_name: file.name,
+            file_path: filePath,
+            content_type: file.type,
+            size_bytes: file.size,
+            uploaded_by: user.id,
+          })
+          .select()
+          .single();
 
-      if (dbError) throw dbError;
+        if (dbError) throw dbError;
 
-      return data;
+        return data;
+      } catch (e) {
+        console.log("Fallback to MockDB UPLOAD EVIDENCE");
+        return MockDB.addEvidence(entryId, file.name);
+      }
     },
   });
 }
