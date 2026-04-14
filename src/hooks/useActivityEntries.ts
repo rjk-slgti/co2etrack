@@ -2,12 +2,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
-export function useActivityEntries(organizationId?: string) {
+export function useActivityEntries(organizationId?: string, status?: 'draft' | 'pending_audit' | 'verified' | 'rejected') {
   return useQuery({
-    queryKey: ['activity-entries', organizationId],
+    queryKey: ['activity-entries', organizationId, status],
     queryFn: async () => {
-      let query = supabase.from('activity_entries').select('*, emission_factor_headers(category, activity_type, source, source_version, region)');
+      let query = supabase.from('activity_entries').select('*, emission_factor_headers(category, activity_type, source, source_version, region), activity_evidence(*)');
       if (organizationId) query = query.eq('organization_id', organizationId);
+      if (status) query = query.eq('status', status);
       const { data, error } = await query.order('created_at', { ascending: false });
       if (error) throw error;
       return data;
@@ -42,6 +43,7 @@ export function useCreateActivityEntry() {
       is_assumed_factor?: boolean;
       notes?: string;
       reporting_period_id?: string;
+      status?: 'draft' | 'pending_audit';
     }) => {
       if (!user) throw new Error('Not authenticated');
       const { data, error } = await supabase
@@ -60,6 +62,39 @@ export function useCreateActivityEntry() {
         factor_id: entry.factor_id,
         factor_source: undefined,
         details: { scope: entry.scope, category: entry.category, quantity: entry.quantity, unit: entry.unit },
+      });
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['activity-entries'] });
+    },
+  });
+}
+
+export function useUpdateEntryStatus() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ entryId, status, orgId }: { entryId: string, status: 'draft' | 'pending_audit' | 'verified' | 'rejected', orgId: string }) => {
+      if (!user) throw new Error('Not authenticated');
+      
+      const { data, error } = await supabase
+        .from('activity_entries')
+        .update({ status })
+        .eq('id', entryId)
+        .select()
+        .single();
+        
+      if (error) throw error;
+
+      await supabase.from('audit_logs').insert({
+        organization_id: orgId,
+        activity_entry_id: entryId,
+        user_id: user.id,
+        action: `status_changed_to_${status}`,
+        details: { new_status: status },
       });
 
       return data;

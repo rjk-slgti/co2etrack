@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { to: '/data-entry', label: 'Data Entry', icon: PlusCircle },
   { to: '/emission-factors', label: 'Emission Factors', icon: Database },
   { to: '/reports', label: 'Reports', icon: FileText },
+  { to: '/auditor', label: 'Auditor Portal', icon: ClipboardList },
   { to: '/audit-log', label: 'Audit Log', icon: Shield },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];

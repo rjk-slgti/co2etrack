@@ -11,6 +11,7 @@ import DataEntry from "./pages/DataEntry";
 import EmissionFactors from "./pages/EmissionFactors";
 import Reports from "./pages/Reports";
 import AuditLog from "./pages/AuditLog";
+import AuditorPortal from "./pages/AuditorPortal";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
@@ -37,6 +38,7 @@ function ProtectedRoutes() {
         <Route path="/emission-factors" element={<EmissionFactors />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/audit-log" element={<AuditLog />} />
+        <Route path="/auditor" element={<AuditorPortal />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

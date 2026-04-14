@@ -39,6 +39,7 @@ export type Database = {
           reporting_period_id: string | null
           scope: string
           scope_category: string | null
+          status: Database["public"]["Enums"]["entry_status"]
           unit: string
           updated_at: string
           user_id: string
@@ -67,6 +68,7 @@ export type Database = {
           reporting_period_id?: string | null
           scope: string
           scope_category?: string | null
+          status?: Database["public"]["Enums"]["entry_status"]
           unit: string
           updated_at?: string
           user_id: string
@@ -95,6 +97,7 @@ export type Database = {
           reporting_period_id?: string | null
           scope?: string
           scope_category?: string | null
+          status?: Database["public"]["Enums"]["entry_status"]
           unit?: string
           updated_at?: string
           user_id?: string
@@ -126,6 +129,47 @@ export type Database = {
             columns: ["reporting_period_id"]
             isOneToOne: false
             referencedRelation: "reporting_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activity_evidence: {
+        Row: {
+          activity_entry_id: string
+          content_type: string | null
+          created_at: string
+          file_name: string
+          file_path: string
+          id: string
+          size_bytes: number | null
+          uploaded_by: string
+        }
+        Insert: {
+          activity_entry_id: string
+          content_type?: string | null
+          created_at?: string
+          file_name: string
+          file_path: string
+          id?: string
+          size_bytes?: number | null
+          uploaded_by: string
+        }
+        Update: {
+          activity_entry_id?: string
+          content_type?: string | null
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          size_bytes?: number | null
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_evidence_activity_entry_id_fkey"
+            columns: ["activity_entry_id"]
+            isOneToOne: false
+            referencedRelation: "activity_entries"
             referencedColumns: ["id"]
           },
         ]
@@ -477,6 +521,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "auditor" | "data_entry"
+      entry_status: "draft" | "pending_audit" | "verified" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -605,6 +650,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "auditor", "data_entry"],
+      entry_status: ["draft", "pending_audit", "verified", "rejected"],
     },
   },
 } as const

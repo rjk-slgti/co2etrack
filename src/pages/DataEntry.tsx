@@ -11,13 +11,15 @@ import { useEmissionFactorHeaders, useFactorsForActivity } from '@/hooks/useEmis
 import { useCreateActivityEntry } from '@/hooks/useActivityEntries';
 import { selectBestFactor, calculateEmission, formatEmission } from '@/lib/calculation-engine';
 import { SCOPE_CATEGORIES, EMISSION_CATEGORIES, DATA_QUALITY_OPTIONS } from '@/lib/constants';
-import { AlertTriangle, Check, Info } from 'lucide-react';
+import { useEvidenceUpload } from '@/hooks/useEvidenceUpload';
+import { AlertTriangle, Check, Info, Upload } from 'lucide-react';
 
 const DEMO_ORG_ID = '00000000-0000-0000-0000-000000000001';
 
 export default function DataEntry() {
   const { toast } = useToast();
   const createEntry = useCreateActivityEntry();
+  const uploadEvidence = useEvidenceUpload();
 
   const [scope, setScope] = useState<string>('');
   const [scopeCategory, setScopeCategory] = useState<string>('');
@@ -27,6 +29,8 @@ export default function DataEntry() {
   const [unit, setUnit] = useState<string>('');
   const [dataQuality, setDataQuality] = useState<string>('Medium');
   const [notes, setNotes] = useState('');
+  const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
+  const [submitStatus, setSubmitStatus] = useState<'draft' | 'pending_audit'>('draft');
 
   const { data: headers } = useEmissionFactorHeaders(category || undefined);
   const { data: factorValues } = useFactorsForActivity(category, activityType);
@@ -65,7 +69,7 @@ export default function DataEntry() {
     }
 
     try {
-      await createEntry.mutateAsync({
+      const entry = await createEntry.mutateAsync({
         organization_id: DEMO_ORG_ID,
         scope,
         scope_category: scopeCategory || undefined,
@@ -84,11 +88,18 @@ export default function DataEntry() {
         data_quality: dataQuality,
         is_assumed_factor: bestFactor.isAssumed,
         notes: notes || undefined,
+        status: submitStatus,
       });
 
-      toast({ title: 'Entry saved', description: `${formatEmission(calcResult.emission_kgco2e)} recorded.` });
+      if (evidenceFile && entry) {
+        toast({ title: 'Uploading evidence...', description: 'Please wait.' });
+        await uploadEvidence.mutateAsync({ entryId: entry.id, file: evidenceFile });
+      }
+
+      toast({ title: 'Entry saved', description: `${formatEmission(calcResult.emission_kgco2e)} recorded as ${submitStatus}.` });
       setQuantity('');
       setNotes('');
+      setEvidenceFile(null);
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
     }
@@ -248,17 +259,47 @@ export default function DataEntry() {
           </Card>
         )}
 
-        {/* Notes */}
+        {/* Notes & Evidence */}
         <Card>
-          <CardContent className="pt-6">
-            <Label>Notes (optional)</Label>
-            <Textarea className="mt-2" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Additional context..." />
+          <CardContent className="pt-6 grid gap-4">
+            <div>
+              <Label>Notes (optional)</Label>
+              <Textarea className="mt-2" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Additional context..." />
+            </div>
+            <div>
+              <Label className="flex items-center gap-2">
+                <Upload className="w-4 h-4" /> Evidence Document (optional)
+              </Label>
+              <Input 
+                type="file" 
+                className="mt-2" 
+                onChange={(e) => setEvidenceFile(e.target.files?.[0] || null)}
+                accept="image/*,.pdf,.csv,.xlsx"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Upload utility bills, fuel receipts, or SAP extracts to support audits.</p>
+            </div>
           </CardContent>
         </Card>
 
-        <Button type="submit" size="lg" className="w-full" disabled={!calcResult || createEntry.isPending}>
-          {createEntry.isPending ? 'Saving...' : 'Save Entry'}
-        </Button>
+        <div className="flex gap-4">
+          <Button 
+            type="submit" 
+            variant="outline"
+            className="w-full" 
+            disabled={!calcResult || createEntry.isPending || uploadEvidence.isPending}
+            onClick={() => setSubmitStatus('draft')}
+          >
+            Save as Draft
+          </Button>
+          <Button 
+            type="submit" 
+            className="w-full" 
+            disabled={!calcResult || createEntry.isPending || uploadEvidence.isPending}
+            onClick={() => setSubmitStatus('pending_audit')}
+          >
+            {createEntry.isPending || uploadEvidence.isPending ? 'Saving...' : 'Submit for Audit'}
+          </Button>
+        </div>
       </form>
     </div>
   );
