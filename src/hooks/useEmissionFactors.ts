@@ -5,6 +5,7 @@ import { MOCK_HEADERS, MOCK_VALUES } from '@/lib/mock-database';
 export function useEmissionFactorHeaders(category?: string) {
   return useQuery({
     queryKey: ['emission-factor-headers', category],
+    queryFn: async () => {
       try {
         let query = supabase.from('emission_factor_headers').select('*');
         if (category) query = query.eq('category', category);
