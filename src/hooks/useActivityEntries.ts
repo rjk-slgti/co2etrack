@@ -6,6 +6,7 @@ import { useAuth } from './useAuth';
 export function useActivityEntries(organizationId?: string, status?: 'draft' | 'pending_audit' | 'verified' | 'rejected') {
   return useQuery({
     queryKey: ['activity-entries', organizationId, status],
+    queryFn: async () => {
       try {
         let query = supabase.from('activity_entries').select('*, emission_factor_headers(category, activity_type, source, source_version, region), activity_evidence(*)');
         if (organizationId) query = query.eq('organization_id', organizationId);
