@@ -165,8 +165,8 @@ export default function DataEntry() {
             </div>
             <div className="space-y-2">
               <Label>Activity Type</Label>
-              <Select value={activityType} onValueChange={setActivityType} disabled={!category}>
-                <SelectTrigger><SelectValue placeholder={category ? "Select activity" : "Select category first"} /></SelectTrigger>
+              <Select value={activityType} onValueChange={setActivityType} disabled={!category || activityTypes.length === 0}>
+                <SelectTrigger><SelectValue placeholder={!category ? "Select category first" : (activityTypes.length === 0 ? "No activities found in DB" : "Select activity")} /></SelectTrigger>
                 <SelectContent>
                   {activityTypes.map(a => (
                     <SelectItem key={a} value={a}>{a}</SelectItem>
