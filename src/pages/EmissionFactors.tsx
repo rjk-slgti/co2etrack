@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useEmissionFactorHeaders, useEmissionFactorValues } from '@/hooks/useEmissionFactors';
 import { EMISSION_CATEGORIES, FACTOR_SOURCES } from '@/lib/constants';
 import { Database, Lock, Search, Filter } from 'lucide-react';
+import { Label } from '@/components/ui/label';
 
 export default function EmissionFactors() {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
