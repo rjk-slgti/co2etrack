@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useActivityEntries, useUpdateEntryStatus } from '@/hooks/useActivityEntries';
+import { useActivityEntries } from '@/hooks/useActivityEntries';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,8 +10,8 @@ import { FileText, CheckCircle, XCircle, ShieldAlert, BadgeCheck, ExternalLink, 
 import { useToast } from '@/hooks/use-toast';
 
 export default function AuditorPortal() {
-  const { data: entries, isLoading } = useActivityEntries(undefined, 'pending_audit');
-  const updateStatus = useUpdateEntryStatus();
+  const { data: entries, isLoading } = useActivityEntries();
+  const { toast } = useToast();
   const { toast } = useToast();
 
   const handleVerify = async (entryId: string, orgId: string) => {

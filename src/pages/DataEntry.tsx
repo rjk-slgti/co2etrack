@@ -88,7 +88,7 @@ export default function DataEntry() {
         data_quality: dataQuality,
         is_assumed_factor: bestFactor.isAssumed,
         notes: notes || undefined,
-        status: submitStatus,
+        notes: notes || undefined,
       });
 
       if (evidenceFile && entry) {
