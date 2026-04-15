@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEmissionFactorHeaders, useEmissionFactorValues } from '@/hooks/useEmissionFactors';
 import { EMISSION_CATEGORIES, FACTOR_SOURCES } from '@/lib/constants';
-import { Database, Lock, Search, Filter } from 'lucide-react';
+import { Database, Lock, Search, Filter, ShieldCheck } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 
 export default function EmissionFactors() {
@@ -138,11 +138,11 @@ export default function EmissionFactors() {
                       </td>
                       <td className="px-4">
                          <div className="bg-muted/20 px-3 py-1.5 rounded-lg border border-muted/50 inline-flex flex-col items-center">
-                            <span className="text-[9px] font-black text-muted-foreground uppercase leading-none mb-1">Validity</span>
-                            <span className="text-[10px] font-black text-primary tabular-nums">
-                               {h.valid_from ? new Date(h.valid_from).getFullYear() : '2024'}
-                               {h.valid_to ? ` – ${new Date(h.valid_to).getFullYear()}` : ' +'}
-                            </span>
+                             <span className="text-[9px] font-black text-muted-foreground uppercase leading-none mb-1">Validity</span>
+                             <span className="text-[10px] font-black text-primary tabular-nums">
+                                {(h as any).valid_from ? new Date((h as any).valid_from).getFullYear() : '2024'}
+                                {(h as any).valid_to ? ` – ${new Date((h as any).valid_to).getFullYear()}` : ' +'}
+                             </span>
                          </div>
                       </td>
                       <td className="py-6 px-8 text-right">

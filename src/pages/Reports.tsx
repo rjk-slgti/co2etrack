@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatEmission } from '@/lib/calculation-engine';
 import { SCOPE_CATEGORIES, SCOPE_COLORS } from '@/lib/constants';
-import { FileText, Download, BarChart3, Printer, ExternalLink, ShieldCheck, Leaf, MapPin, Globe, Award, Signature, CheckDouble } from 'lucide-react';
+import { FileText, Download, BarChart3, Printer, ExternalLink, ShieldCheck, Leaf, MapPin, Globe, Award, Signature, CheckCheck } from 'lucide-react';
 
 export default function Reports() {
   const { data: entries } = useActivityEntries();
@@ -16,7 +16,7 @@ export default function Reports() {
     return acc;
   }, {} as Record<string, number>);
 
-  const totalEmissions = Object.values(scopeTotals).reduce((a, b) => a + b, 0);
+  const totalEmissions = Object.values(scopeTotals).reduce((a: number, b: number) => a + b, 0);
 
   // Scope 3 category breakdown
   const scope3ByCategory = entriesList
@@ -91,7 +91,7 @@ export default function Reports() {
        <div className="grid grid-cols-2 gap-8">
          <div className="space-y-4 bg-muted/5 p-6 rounded-3xl border border-muted/20">
            <h3 className="text-sm font-black text-primary uppercase tracking-widest flex items-center gap-2">
-             <CheckDouble className="w-4 h-4" /> Methodology Summary
+             <CheckCheck className="w-4 h-4" /> Methodology Summary
            </h3>
            <p className="text-[11px] leading-relaxed text-muted-foreground font-bold">
              Global Warming Potentials (GWPs) are sourced from the IPCC Sixth Assessment Report (AR6). 
@@ -203,7 +203,7 @@ export default function Reports() {
                         <td className="text-right tabular-nums font-bold text-gray-600">{(scopeTotals[scope] || 0).toLocaleString()}</td>
                         <td className="text-right tabular-nums font-black text-primary text-lg">{((scopeTotals[scope] || 0) / 1000).toFixed(3)}</td>
                         <td className="text-right tabular-nums text-muted-foreground font-black">
-                          {totalEmissions > 0 ? `${(((scopeTotals[scope] || 0) / totalEmissions) * 100).toFixed(1)}%` : '0%'}
+                          {(totalEmissions as number) > 0 ? `${(((scopeTotals[scope] || 0) / (totalEmissions as number)) * 100).toFixed(1)}%` : '0%'}
                         </td>
                       </tr>
                     ))}
@@ -218,7 +218,7 @@ export default function Reports() {
                       </td>
                       <td className="text-right pr-4 italic text-muted-foreground tabular-nums">{totalEmissions.toLocaleString()} kg</td>
                       <td className="text-right pr-4 text-primary text-3xl font-black tabular-nums lowercase">
-                        {((totalEmissions / 1000).toFixed(2))} <span className="text-sm">tco2e</span>
+                        {((totalEmissions as number) / 1000).toFixed(2)} <span className="text-sm">tco2e</span>
                       </td>
                       <td className="text-right pr-8 text-primary shadow-inner opacity-50">100.0</td>
                     </tr>
@@ -331,7 +331,7 @@ export default function Reports() {
                      <div className="w-1.5 h-1.5 rounded-full bg-primary group-hover:scale-150 transition-transform" />
                      <span className="text-xs font-black text-gray-800 uppercase tracking-tighter">{std.label}</span>
                    </div>
-                   <Badge variant="ghost" className="text-[8px] font-black text-primary uppercase tracking-widest italic opacity-60 underline underline-offset-4">{std.status}</Badge>
+                   <Badge variant="outline" className="text-[8px] font-black text-primary uppercase tracking-widest italic opacity-60 underline underline-offset-4">{std.status}</Badge>
                  </div>
                ))}
                

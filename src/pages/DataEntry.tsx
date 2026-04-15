@@ -12,7 +12,7 @@ import { useCreateActivityEntry } from '@/hooks/useActivityEntries';
 import { selectBestFactor, calculateEmission, formatEmission } from '@/lib/calculation-engine';
 import { SCOPE_CATEGORIES, EMISSION_CATEGORIES, DATA_QUALITY_OPTIONS } from '@/lib/constants';
 import { useEvidenceUpload } from '@/hooks/useEvidenceUpload';
-import { AlertTriangle, Check, Search, Upload, FileText, Database, Shield, Info } from 'lucide-react';
+import { AlertTriangle, Check, Search, Upload, FileText, Database, Shield, Info, Leaf } from 'lucide-react';
 
 const DEMO_ORG_ID = '00000000-0000-0000-0000-000000000001';
 
