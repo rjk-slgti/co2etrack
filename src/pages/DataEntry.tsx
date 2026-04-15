@@ -109,167 +109,267 @@ export default function DataEntry() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <div className="border-b border-muted pb-4">
-        <h1 className="text-3xl font-bold font-heading text-primary uppercase tracking-tight">Audit-Ready Data Input</h1>
-        <p className="text-muted-foreground font-medium mt-1">Structured GHG Activity Recording System</p>
+    <div className="max-w-5xl mx-auto space-y-10 pb-20">
+      <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-muted pb-6">
+        <div>
+          <Badge variant="outline" className="mb-2 bg-primary/5 text-primary border-primary/20 font-bold uppercase tracking-widest text-[10px]">
+            Inventory Phase 1
+          </Badge>
+          <h1 className="text-4xl font-black font-heading text-primary uppercase tracking-tighter">Audit-Ready Data Input</h1>
+          <p className="text-muted-foreground font-medium italic mt-1">Structured Activity Recording & Emission Benchmarking</p>
+        </div>
+        <div className="hidden md:flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest bg-muted/20 px-4 py-2 rounded-full border border-muted/30">
+          <Shield className="w-4 h-4 text-secondary" /> ISO 14064 Compliance Tier
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Classification */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="md:col-span-1 shadow-sm h-full flex flex-col">
-            <CardHeader className="bg-muted/30 pb-4">
-              <CardTitle className="text-sm font-bold uppercase text-primary flex items-center gap-2">
-                <Shield className="w-4 h-4" /> Scope Class
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4 space-y-4 flex-1">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">GHG Classification</Label>
-                <Select value={scope} onValueChange={(v) => { setScope(v); setScopeCategory(''); }}>
-                  <SelectTrigger className="bg-white border-muted-foreground/20"><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    {Object.keys(SCOPE_CATEGORIES).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              {scope && (
-                <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
-                  <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Protocol Category</Label>
-                  <Select value={scopeCategory} onValueChange={setScopeCategory}>
-                    <SelectTrigger className="bg-white border-muted-foreground/20"><SelectValue placeholder="Select" /></SelectTrigger>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Classification Column */}
+          <div className="lg:col-span-4 space-y-8">
+            <Card className="shadow-lg border-none bg-white overflow-hidden">
+              <CardHeader className="bg-primary pt-4 pb-4">
+                <CardTitle className="text-xs font-black uppercase text-white flex items-center gap-2 tracking-[.2em]">
+                  <Database className="w-4 h-4 opacity-70" /> 01. Classification
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-6">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">GHG Scope Selection</Label>
+                  <Select value={scope} onValueChange={(v) => { setScope(v); setScopeCategory(''); }}>
+                    <SelectTrigger className="bg-muted/30 border-none font-bold text-primary">
+                      <SelectValue placeholder="Select Scope" />
+                    </SelectTrigger>
                     <SelectContent>
-                      {SCOPE_CATEGORIES[scope as keyof typeof SCOPE_CATEGORIES]?.map(c => (
-                        <SelectItem key={c.code} value={c.code}>{c.code} - {c.name}</SelectItem>
-                      ))}
+                      {Object.keys(SCOPE_CATEGORIES).map(s => <SelectItem key={s} value={s} className="font-bold">{s}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
-              )}
-            </CardContent>
-          </Card>
 
-          <Card className="md:col-span-2 shadow-sm h-full">
-            <CardHeader className="bg-muted/30 pb-4">
-              <CardTitle className="text-sm font-bold uppercase text-primary flex items-center gap-2">
-                <Search className="w-4 h-4" /> Activity Mapping
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Emission Category</Label>
-                <Select value={category} onValueChange={(v) => { setCategory(v); setActivityType(''); }}>
-                  <SelectTrigger className="bg-white border-muted-foreground/20"><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    {EMISSION_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Activity Detail</Label>
-                <Select value={activityType} onValueChange={setActivityType} disabled={!category || activityTypes.length === 0}>
-                   <SelectTrigger className="bg-white border-muted-foreground/20">
-                     <SelectValue placeholder={!category ? "Waiting for Category..." : (activityTypes.length === 0 ? "No records found" : "Select...")} />
-                   </SelectTrigger>
-                   <SelectContent>
-                     {activityTypes.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-                   </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                {scope && (
+                  <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Protocol Category Code</Label>
+                    <Select value={scopeCategory} onValueChange={setScopeCategory}>
+                      <SelectTrigger className="bg-muted/30 border-none font-bold">
+                        <SelectValue placeholder="Select Category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SCOPE_CATEGORIES[scope as keyof typeof SCOPE_CATEGORIES]?.map(c => (
+                          <SelectItem key={c.code} value={c.code} className="text-xs">
+                            <span className="font-black text-primary mr-2">{c.code}</span> {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                
+                <div className="pt-2">
+                   <div className="flex items-start gap-3 p-3 bg-secondary/5 rounded-lg border border-secondary/10">
+                     <Info className="w-4 h-4 text-secondary mt-0.5 shrink-0" />
+                     <p className="text-[10px] leading-relaxed text-secondary-foreground font-medium italic">
+                       Scope classification is governed by the GHG Protocol Corporate Standard boundary definitions.
+                     </p>
+                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-        {/* Quantity & Read-Only Factor */}
-        <Card className="shadow-sm border-primary/10">
-          <CardHeader className="bg-primary/5 pb-4 border-b border-primary/10">
-            <CardTitle className="text-sm font-bold uppercase text-primary flex items-center gap-2">
-              <Database className="w-4 h-4" /> Quantifiable Data & Governing Factor
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Input Quantity</Label>
-              <Input type="number" step="any" min="0" value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder="0.00" className="bg-white text-lg font-bold" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Primary Unit</Label>
-              <Select value={unit} onValueChange={setUnit}>
-                <SelectTrigger className="bg-white"><SelectValue placeholder="Select Unit" /></SelectTrigger>
-                <SelectContent>
-                  {(availableUnits.length > 0 ? [...new Set(availableUnits)] : ['L', 'kWh', 'km', 'kg', 'MWh']).map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Auto-filled Read-Only Factor Segment */}
-            <div className="bg-muted/40 p-3 rounded border border-muted flex flex-col justify-center">
-              <Label className="text-[9px] font-extrabold uppercase text-muted-foreground tracking-tighter italic">Governing Emission Factor (Auto-Linked)</Label>
-              {bestFactor ? (
-                <div className="mt-1 flex items-baseline gap-2">
-                  <span className="text-sm font-extrabold text-primary">{bestFactor.factor.emission_factor}</span>
-                  <span className="text-[10px] text-muted-foreground">kgCO₂e/{bestFactor.factor.unit_standard}</span>
-                  <Tooltip text={`Source: ${bestFactor.factor.header.source} (${bestFactor.factor.header.source_version})`}>
-                     <Info className="w-2.5 h-2.5 text-muted-foreground cursor-help" />
-                  </Tooltip>
+          {/* Activity Mapping Column */}
+          <div className="lg:col-span-8 space-y-8">
+            <Card className="shadow-lg border-none bg-white overflow-hidden">
+              <CardHeader className="bg-secondary pt-4 pb-4">
+                <CardTitle className="text-xs font-black uppercase text-white flex items-center gap-2 tracking-[.2em]">
+                  <Search className="w-4 h-4 opacity-70" /> 02. Activity Mapping & Quantification
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-8 space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Emission Source Category</Label>
+                    <Select value={category} onValueChange={(v) => { setCategory(v); setActivityType(''); }}>
+                      <SelectTrigger className="bg-muted/30 border-none font-extrabold text-primary h-12">
+                        <SelectValue placeholder="Activity Group" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {EMISSION_CATEGORIES.map(c => <SelectItem key={c} value={c} className="font-bold">{c}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Specific Activity Detail</Label>
+                    <Select value={activityType} onValueChange={setActivityType} disabled={!category || activityTypes.length === 0}>
+                       <SelectTrigger className="bg-muted/30 border-none font-extrabold h-12">
+                         <SelectValue placeholder={!category ? "Waiting for selection..." : "Select specific type"} />
+                       </SelectTrigger>
+                       <SelectContent>
+                         {activityTypes.map(a => <SelectItem key={a} value={a} className="font-medium">{a}</SelectItem>)}
+                       </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end border-t border-muted pt-8">
+                  <div className="md:col-span-1 space-y-2">
+                    <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Measured Quantity</Label>
+                    <Input 
+                      type="number" 
+                      step="any" 
+                      min="0" 
+                      value={quantity} 
+                      onChange={(e) => setQuantity(e.target.value)} 
+                      placeholder="0.00" 
+                      className="bg-muted/30 border-none text-2xl font-black text-primary h-14" 
+                    />
+                  </div>
+                  <div className="md:col-span-1 space-y-2">
+                    <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Unit of Measure</Label>
+                    <Select value={unit} onValueChange={setUnit}>
+                      <SelectTrigger className="bg-muted/30 border-none font-black h-14">
+                        <SelectValue placeholder="Unit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(availableUnits.length > 0 ? [...new Set(availableUnits)] : ['L', 'kWh', 'km', 'kg', 'MWh']).map(u => <SelectItem key={u} value={u} className="font-bold">{u}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="md:col-span-1 pb-1">
+                     <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 flex flex-col justify-center h-14">
+                        <Label className="text-[8px] font-black uppercase text-primary/60 tracking-tighter italic">Governing EF (Linked)</Label>
+                        {bestFactor ? (
+                          <div className="flex items-baseline gap-1.5 overflow-hidden">
+                            <span className="text-lg font-black text-primary tabular-nums truncate">{bestFactor.factor.emission_factor}</span>
+                            <span className="text-[9px] text-muted-foreground font-bold whitespace-nowrap">kgCO₂e/{bestFactor.factor.unit_standard}</span>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground italic font-medium">Auto-mapping...</span>
+                        )}
+                     </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Premium Calculation Preview */}
+            <div className="relative group perspective-1000">
+              {calcResult ? (
+                <div className="bg-primary text-white p-8 rounded-2xl shadow-2xl border border-white/10 flex flex-col md:flex-row justify-between items-center gap-6 animate-in zoom-in-95 duration-500 overflow-hidden">
+                  <div className="absolute top-0 right-0 p-10 opacity-10 rotate-12">
+                     <Leaf className="w-32 h-32" />
+                  </div>
+                  
+                  <div className="relative z-10 text-center md:text-left">
+                    <p className="text-[10px] uppercase font-black opacity-80 tracking-[0.3em] mb-2 drop-shadow-sm">Calculated GHG Footprint</p>
+                    <h2 className="text-6xl font-black font-heading tracking-tighter flex items-baseline gap-2">
+                      {formatEmission(calcResult.emission_kgco2e).split(' ')[0]}
+                      <span className="text-xl opacity-80">{formatEmission(calcResult.emission_kgco2e).split(' ')[1]}</span>
+                    </h2>
+                    <Badge className="mt-4 bg-white/20 text-white border-none font-bold italic tracking-widest text-[9px]">BENCHMARKED VIA {bestFactor?.factor.header.source || "OFFICIAL"}</Badge>
+                  </div>
+                  
+                  <div className="relative z-10 bg-black/20 backdrop-blur-md p-6 rounded-2xl flex flex-col items-center md:items-end text-xs font-bold border border-white/10 tabular-nums">
+                    <div className="flex items-center gap-3 mb-2">
+                       <span className="opacity-60">{quantity} {unit}</span>
+                       <div className="h-px w-8 bg-white/20" />
+                       <span className="text-accent underline underline-offset-4 decoration-accent/50">{calcResult.converted_quantity.toFixed(3)} {calcResult.converted_unit}</span>
+                    </div>
+                    <p className="text-[10px] text-white/50 uppercase tracking-widest font-black flex items-center gap-1.5 mt-2">
+                       <Check className="w-3 h-3 text-accent" /> Audit Trail Initialized
+                    </p>
+                  </div>
                 </div>
               ) : (
-                <span className="text-xs text-muted-foreground italic mt-1">Awaiting Activity Selection...</span>
+                <div className="bg-muted/10 p-12 rounded-2xl border-2 border-dashed border-muted flex flex-col items-center justify-center text-center">
+                   <AlertTriangle className="w-10 h-10 text-muted-foreground/30 mb-4" />
+                   <p className="text-muted-foreground font-bold uppercase tracking-widest text-xs">Awaiting Numerical Input for Computation</p>
+                </div>
               )}
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Calculation Preview */}
-        {calcResult && (
-          <div className="bg-primary text-white p-6 rounded-xl shadow-lg border-2 border-primary-foreground/10 flex flex-col md:flex-row justify-between items-center gap-4 animate-in zoom-in-95 duration-200">
-            <div className="text-center md:text-left">
-              <p className="text-[10px] uppercase font-bold opacity-70 tracking-[.2em]">Calculated Greenhouse Gas Impact</p>
-              <h2 className="text-4xl font-black font-heading tracking-tighter">{formatEmission(calcResult.emission_kgco2e)}</h2>
-            </div>
-            <div className="bg-white/10 p-4 rounded-lg flex flex-col items-end text-[11px] font-medium border border-white/20 tabular-nums">
-              <p>{quantity} {unit} → {calcResult.converted_quantity.toFixed(3)} {calcResult.converted_unit}</p>
-              <p className="opacity-60 font-bold mt-1">CO₂ Conversion Methodology Applied</p>
-            </div>
           </div>
-        )}
+        </div>
 
         {/* Metadata & Evidence */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-widest flex items-center gap-2">
-                <FileText className="w-3.5 h-3.5" /> Documentation Notes
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pt-4">
+          <Card className="md:col-span-7 shadow-lg border-none bg-white overflow-hidden">
+            <CardHeader className="bg-muted/50 pb-4 border-b">
+              <CardTitle className="text-[10px] font-black uppercase text-muted-foreground tracking-[.2em] flex items-center gap-2">
+                <FileText className="w-4 h-4 text-primary/60" /> Audit Trail Narrative
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Enter audit trail context..." className="min-h-[100px] text-xs" />
+            <CardContent className="pt-6">
+              <Textarea 
+                value={notes} 
+                onChange={(e) => setNotes(e.target.value)} 
+                placeholder="Specify the functional boundary, data source reliability, or any assumptions made during recording..." 
+                className="min-h-[120px] bg-muted/20 border-none font-medium text-sm focus-visible:ring-primary" 
+              />
             </CardContent>
           </Card>
           
-          <Card className="shadow-sm border-dashed border-muted-foreground/30">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-widest flex items-center gap-2">
-                <Upload className="w-3.5 h-3.5" /> Evidence Management
+          <Card className="md:col-span-5 shadow-lg border-none bg-white overflow-hidden">
+            <CardHeader className="bg-muted/50 pb-4 border-b">
+              <CardTitle className="text-[10px] font-black uppercase text-muted-foreground tracking-[.2em] flex items-center gap-2">
+                <Upload className="w-4 h-4 text-primary/60" /> Evidence Management
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <Input type="file" onChange={(e) => setEvidenceFile(e.target.files?.[0] || null)} className="text-xs py-1" />
-              <div className="flex items-center gap-2 p-2 bg-muted/20 rounded border border-muted text-[10px] text-muted-foreground italic">
-                <Info className="w-3 h-3 text-primary" />
-                Upload bills, certificates, or invoices for ISO compliance.
+            <CardContent className="pt-6 space-y-6">
+              <div className="relative group">
+                <Input 
+                  type="file" 
+                  onChange={(e) => setEvidenceFile(e.target.files?.[0] || null)} 
+                  className="hidden" 
+                  id="evidence-upload" 
+                />
+                <label 
+                  htmlFor="evidence-upload" 
+                  className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-muted rounded-xl bg-muted/10 group-hover:bg-primary/5 group-hover:border-primary/30 transition-all cursor-pointer"
+                >
+                   {evidenceFile ? (
+                     <>
+                       <div className="p-3 bg-primary/10 rounded-full mb-2"><Check className="w-6 h-6 text-primary" /></div>
+                       <p className="text-xs font-black text-primary truncate max-w-full">{evidenceFile.name}</p>
+                       <p className="text-[10px] text-muted-foreground mt-1">Ready for secure upload</p>
+                     </>
+                   ) : (
+                     <>
+                       <Upload className="w-8 h-8 text-muted-foreground/30 mb-2 group-hover:text-primary/50 transition-colors" />
+                       <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Upload Compliance Evidence</p>
+                       <p className="text-[9px] text-muted-foreground/60 mt-1 italic">Bills, Certificates, or Invoices (Max 10MB)</p>
+                     </>
+                   )}
+                </label>
+              </div>
+              <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg text-[10px] text-muted-foreground font-medium border border-muted/50">
+                <Shield className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
+                Evidence is hashed and stored in encrypted storage for ISO 14064 reconciliation.
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <div className="flex gap-4 pt-4">
-          <Button type="submit" variant="ghost" className="flex-1 font-bold text-muted-foreground hover:bg-muted" disabled={!calcResult || createEntry.isPending} onClick={() => setSubmitStatus('draft')}>
-            Save Local Draft
+        {/* Final Actions */}
+        <div className="flex flex-col sm:flex-row gap-4 pt-10 border-t border-muted">
+          <Button 
+            type="submit" 
+            variant="outline" 
+            className="flex-1 font-black text-xs text-muted-foreground hover:bg-muted py-8 uppercase tracking-[.2em] border-muted-foreground/20 rounded-xl"
+            disabled={!calcResult || createEntry.isPending} 
+            onClick={() => setSubmitStatus('draft')}
+          >
+            Save Audit Draft
           </Button>
-          <Button type="submit" className="flex-1 font-extrabold bg-primary hover:bg-primary/90 text-white shadow-md py-6 rounded-lg text-lg ring-offset-background transition-all hover:scale-[1.01]" disabled={!calcResult || createEntry.isPending} onClick={() => setSubmitStatus('pending_audit')}>
-            {createEntry.isPending ? 'Processing...' : 'Secure & Submit for Audit'}
+          <Button 
+            type="submit" 
+            className="flex-1 font-black bg-primary hover:bg-primary/90 text-white shadow-2xl py-8 rounded-xl text-lg uppercase tracking-widest ring-offset-background transition-all hover:scale-[1.02] active:scale-[0.98]" 
+            disabled={!calcResult || createEntry.isPending} 
+            onClick={() => setSubmitStatus('pending_audit')}
+          >
+            {createEntry.isPending ? (
+              <span className="flex items-center gap-2"><div className="w-4 h-4 rounded-full border-2 border-white/20 border-t-white animate-spin" /> Finalizing...</span>
+            ) : (
+              'Submit for Formal Verification'
+            )}
           </Button>
         </div>
       </form>
@@ -285,3 +385,4 @@ const Tooltip = ({ children, text }: { children: React.ReactNode, text: string }
     </div>
   </div>
 );
+

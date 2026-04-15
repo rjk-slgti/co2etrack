@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatEmission } from '@/lib/calculation-engine';
 import { SCOPE_COLORS } from '@/lib/constants';
-import { BarChart3, TrendingUp, Leaf, AlertTriangle, Zap, Car, Factory, ShieldCheck, Timer } from 'lucide-react';
+import { BarChart3, TrendingUp, Leaf, AlertTriangle, Zap, Car, Factory, ShieldCheck, Timer, Download, ListChecks } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
@@ -39,116 +39,112 @@ export default function Dashboard() {
   const assumedCount = entriesList.filter(e => e.is_assumed_factor).length;
   const pendingAuditCount = entriesList.filter(e => e.status === 'pending_audit').length;
 
-  const chartConfig = {
-    value: { label: 'Emissions (tCO2e)', color: 'hsl(var(--primary))' },
-  };
-
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div className="max-w-7xl mx-auto space-y-10 pb-20">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
         <div>
-          <h1 className="text-4xl font-bold font-heading text-primary">Operational Overview</h1>
-          <p className="text-muted-foreground text-lg italic mt-1 font-medium">Sustainability Precision • Audit-Ready Inventory</p>
-        </div>
-        <div className="flex gap-2">
-          <Badge variant="outline" className="bg-white px-3 py-1 flex items-center gap-2 border-primary/20 shadow-sm">
-            <Timer className="w-4 h-4 text-primary" />
-            <span className="font-semibold">{pendingAuditCount} Pending Reviews</span>
+          <Badge variant="outline" className="mb-2 bg-primary/5 text-primary border-primary/20 font-black uppercase tracking-[.3em] text-[9px]">
+            Intelligence Dashboard
           </Badge>
-          <Badge variant="outline" className="bg-white px-3 py-1 flex items-center gap-2 border-primary/20 shadow-sm">
+          <h1 className="text-5xl font-black font-heading text-primary uppercase tracking-tighter">Operational Overview</h1>
+          <p className="text-muted-foreground text-lg italic mt-1 font-medium">Sustainability Precision • Audit-Ready Inventory Control</p>
+        </div>
+        <div className="flex gap-3">
+          <div className="flex flex-col items-end mr-2">
+             <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Compliance Status</span>
+             <span className="text-sm font-bold text-primary italic uppercase tracking-tighter">Verified Stream</span>
+          </div>
+          <Badge variant="outline" className="bg-white px-4 py-2 flex items-center gap-2 border-primary/20 shadow-xl rounded-xl">
+            <Timer className="w-4 h-4 text-secondary" />
+            <span className="font-black text-[10px] uppercase tracking-widest">{pendingAuditCount} Reviews Pending</span>
+          </Badge>
+          <Badge variant="outline" className="bg-white px-4 py-2 flex items-center gap-2 border-primary/20 shadow-xl rounded-xl">
             <ShieldCheck className="w-4 h-4 text-primary" />
-            <span className="font-semibold italic">ISO 14064 Compliant</span>
+            <span className="font-black text-[10px] uppercase tracking-widest">ISO 14064-1</span>
           </Badge>
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="relative overflow-hidden border-none shadow-xl bg-primary text-white">
-          <div className="absolute top-0 right-0 p-4 opacity-10">
-            <Leaf className="h-16 w-16" />
+      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="relative overflow-hidden border-none shadow-2xl bg-primary text-white group hover:scale-[1.02] transition-transform duration-500 rounded-3xl">
+          <div className="absolute top-0 right-0 p-6 opacity-20 group-hover:rotate-12 transition-transform duration-700">
+            <Leaf className="h-20 w-20" />
           </div>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium opacity-80 uppercase tracking-widest font-heading">Total Emissions</CardTitle>
+          <CardHeader className="pb-2 relative z-10">
+            <CardTitle className="text-[10px] font-black uppercase tracking-[.3em] opacity-80">Total Emissions</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{formatEmission(totalEmissions)}</div>
-            <p className="text-xs mt-2 opacity-70">Inventory period: 2024 CY</p>
+          <CardContent className="relative z-10">
+            <div className="text-5xl font-black tracking-tighter flex items-baseline gap-2">
+               {formatEmission(totalEmissions).split(' ')[0]}
+               <span className="text-xl opacity-70 italic">{formatEmission(totalEmissions).split(' ')[1]}</span>
+            </div>
+            <p className="text-[9px] mt-4 font-black uppercase tracking-widest opacity-60">Inventory period: 2024 CY</p>
           </CardContent>
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-white/20" />
         </Card>
 
-        <Card className="border-l-4 border-l-[#1B5E20] shadow-md hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Scope 1</CardTitle>
-            <Factory className="h-4 w-4 text-[#1B5E20]" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-extrabold text-[#1B5E20]">{formatEmission(scopeTotals['Scope 1'] || 0)}</div>
-            <div className="w-full bg-muted h-1 rounded-full mt-3 overflow-hidden">
-               <div className="bg-[#1B5E20] h-full" style={{ width: `${(scopeTotals['Scope 1'] / (totalEmissions || 1)) * 100}%` }} />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-[#00796B] shadow-md hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Scope 2</CardTitle>
-            <Zap className="h-4 w-4 text-[#00796B]" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-extrabold text-[#00796B]">{formatEmission(scopeTotals['Scope 2'] || 0)}</div>
-            <div className="w-full bg-muted h-1 rounded-full mt-3 overflow-hidden">
-               <div className="bg-[#00796B] h-full" style={{ width: `${(scopeTotals['Scope 2'] / (totalEmissions || 1)) * 100}%` }} />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-[#8BC34A] shadow-md hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Scope 3</CardTitle>
-            <Car className="h-4 w-4 text-[#8BC34A]" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-extrabold text-[#8BC34A]">{formatEmission(scopeTotals['Scope 3'] || 0)}</div>
-            <div className="w-full bg-muted h-1 rounded-full mt-3 overflow-hidden">
-               <div className="bg-[#8BC34A] h-full" style={{ width: `${(scopeTotals['Scope 3'] / (totalEmissions || 1)) * 100}%` }} />
-            </div>
-          </CardContent>
-        </Card>
+        {[
+          { label: 'Scope 1', color: '#1B5E20', icon: Factory, value: scopeTotals['Scope 1'] },
+          { label: 'Scope 2', color: '#00796B', icon: Zap, value: scopeTotals['Scope 2'] },
+          { label: 'Scope 3', color: '#8BC34A', icon: Car, value: scopeTotals['Scope 3'] },
+        ].map((scope, idx) => (
+          <Card key={idx} className="border-none shadow-xl bg-white hover:shadow-2xl transition-all duration-300 rounded-3xl group overflow-hidden">
+            <div className="h-1 w-full" style={{ backgroundColor: scope.color }} />
+            <CardHeader className="flex flex-row items-center justify-between pb-2 px-6 pt-6">
+              <CardTitle className="text-[10px] font-black text-muted-foreground uppercase tracking-[.2em]">{scope.label}</CardTitle>
+              <scope.icon className="h-5 w-5 group-hover:scale-110 transition-transform" style={{ color: scope.color }} />
+            </CardHeader>
+            <CardContent className="px-6 pb-6 pt-2">
+              <div className="text-3xl font-black tabular-nums tracking-tighter" style={{ color: scope.color }}>
+                {formatEmission(scope.value || 0)}
+              </div>
+              <div className="w-full bg-muted h-1.5 rounded-full mt-5 overflow-hidden ring-1 ring-black/5">
+                 <div className="h-full transition-all duration-1000 ease-out" style={{ backgroundColor: scope.color, width: `${(scope.value / (totalEmissions || 1)) * 100}%` }} />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {assumedCount > 0 && (
-        <Card className="border-none shadow-md bg-white border-l-4 border-l-orange-500">
-          <CardContent className="flex items-center gap-4 pt-6 pb-6">
-            <div className="p-2 bg-orange-50 rounded-lg">
-              <AlertTriangle className="h-6 w-6 text-orange-500" />
+        <Card className="border-none shadow-xl bg-orange-50/50 border-l-8 border-l-orange-500 rounded-2xl overflow-hidden ring-1 ring-orange-200">
+          <CardContent className="flex items-center gap-6 pt-8 pb-8 px-8">
+            <div className="p-4 bg-orange-100 rounded-2xl shadow-inner">
+              <AlertTriangle className="h-8 w-8 text-orange-600" />
             </div>
-            <div>
-              <p className="font-bold text-orange-900 flex items-center gap-2">
-                Action Required: Data Quality Warning
-                <Badge variant="secondary" className="bg-orange-100 text-orange-700 border-none px-2 py-0 text-[10px] uppercase font-bold">Low Fidelity</Badge>
-              </p>
-              <p className="text-sm text-orange-700/80">
-                {assumedCount} entries are currently utilizing calculated fallback factors. High-precision auditing requires source verification.
+            <div className="flex-1">
+              <div className="flex items-center gap-4 mb-2">
+                <h3 className="font-black text-orange-950 uppercase tracking-tight text-lg">Inventory Integrity Warning</h3>
+                <Badge className="bg-orange-500 text-white border-none px-3 py-1 text-[9px] font-black uppercase tracking-widest italic shadow-lg shadow-orange-500/20">LOW FIDELITY</Badge>
+              </div>
+              <p className="text-sm text-orange-900/70 font-medium">
+                <span className="font-black text-orange-950">{assumedCount} critical entries</span> are currently utilizing proxy emission factors. Precise ISO-standard auditing requires direct source verification to maintain compliance status.
               </p>
             </div>
+            <Button className="bg-orange-600 hover:bg-orange-700 text-white font-black uppercase tracking-widest text-[10px] h-12 px-6 rounded-xl shadow-xl shadow-orange-600/20">
+               Resolve Discrepancies
+            </Button>
           </CardContent>
         </Card>
       )}
 
       {/* Analytics Group */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-1 shadow-sm border-muted/20">
-          <CardHeader>
-            <CardTitle className="text-lg font-heading tracking-tight flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-primary" /> Emission Structure
+      <div className="grid gap-10 lg:grid-cols-12">
+        <Card className="lg:col-span-4 shadow-2xl border-none bg-white rounded-3xl overflow-hidden ring-1 ring-black/5">
+          <CardHeader className="bg-muted/30 border-b border-muted/50 px-8 py-6">
+            <CardTitle className="text-xs font-black uppercase text-primary tracking-[.2em] flex items-center gap-3">
+              <BarChart3 className="h-5 w-5 opacity-70" /> Structural Composition
             </CardTitle>
-            <CardDescription>Relative contribution by GHG Scope</CardDescription>
           </CardHeader>
-          <CardContent className="flex justify-center flex-col items-center">
+          <CardContent className="pt-10 px-8 pb-10 flex flex-col items-center">
             {pieData.length > 0 ? (
               <>
-              <div className="h-[220px] w-full">
+              <div className="h-[260px] w-full relative">
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                   <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Total</span>
+                   <span className="text-2xl font-black text-primary">100%</span>
+                </div>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie 
@@ -157,147 +153,159 @@ export default function Dashboard() {
                       nameKey="name" 
                       cx="50%" 
                       cy="50%" 
-                      innerRadius={60}
-                      outerRadius={80} 
-                      paddingAngle={5}
+                      innerRadius={75}
+                      outerRadius={100} 
+                      paddingAngle={8}
                     >
-                      {pieData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+                      {pieData.map((entry, i) => <Cell key={i} fill={entry.fill} stroke="rgba(255,255,255,0.1)" strokeWidth={2} />)}
                     </Pie>
-                    <Tooltip />
+                    <Tooltip content={<div className="bg-white p-3 shadow-2xl border border-muted/50 rounded-2xl text-[10px] font-black uppercase tracking-widest" />} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="grid grid-cols-2 gap-4 mt-4 w-full text-xs">
+              <div className="grid grid-cols-2 gap-x-8 gap-y-4 mt-8 w-full">
                 {pieData.map((d, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: d.fill }} />
-                    <span className="font-bold">{d.name}:</span>
-                    <span className="text-muted-foreground">{totalEmissions > 0 ? ((d.value/totalEmissions)*100).toFixed(0) : 0}%</span>
+                  <div key={i} className="flex items-center justify-between border-b border-muted/20 pb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.fill }} />
+                      <span className="text-[10px] font-black text-muted-foreground uppercase">{d.name}</span>
+                    </div>
+                    <span className="font-black text-primary text-xs">{totalEmissions > 0 ? ((d.value/totalEmissions)*100).toFixed(0) : 0}%</span>
                   </div>
                 ))}
               </div>
               </>
             ) : (
-              <div className="flex h-64 items-center justify-center text-muted-foreground text-sm">No inventory data available.</div>
+              <div className="flex h-64 items-center justify-center text-muted-foreground text-xs italic font-medium uppercase tracking-[.2em] opacity-40">No Structural Data</div>
             )}
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2 shadow-sm border-muted/20">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-lg font-heading tracking-tight flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-primary" /> Key Emission Drivers
-              </CardTitle>
-              <CardDescription>Top activity categories (tonnes CO2e)</CardDescription>
-            </div>
+        <Card className="lg:col-span-8 shadow-2xl border-none bg-white rounded-3xl overflow-hidden ring-1 ring-black/5">
+          <CardHeader className="bg-muted/30 border-b border-muted/50 px-8 py-6 flex flex-row items-center justify-between">
+            <CardTitle className="text-xs font-black uppercase text-primary tracking-[.2em] flex items-center gap-3">
+              <TrendingUp className="h-5 w-5 opacity-70" /> Strategic Hotspots
+            </CardTitle>
+            <Badge className="bg-primary/5 text-primary border-primary/20 font-black italic text-[9px] uppercase tracking-widest px-3 py-1 italic">Top Tonnes (tCO2e)</Badge>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-10">
             {barData.length > 0 ? (
-              <div className="h-[300px] w-full">
+              <div className="h-[360px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={barData} layout="vertical" margin={{ left: 40 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
+                  <BarChart data={barData} layout="vertical" margin={{ left: 20 }}>
+                    <CartesianGrid strokeDasharray="4 4" horizontal={true} vertical={false} stroke="hsl(var(--muted))" opacity={0.3} />
                     <XAxis type="number" hide />
                     <YAxis 
                       type="category" 
                       dataKey="name" 
-                      fontSize={11} 
-                      width={100}
+                      fontSize={10} 
+                      width={120}
                       axisLine={false}
                       tickLine={false}
+                      tick={{fill: 'currentColor', fontWeight: 900, textTransform: 'uppercase'}}
                     />
                     <Tooltip 
-                      cursor={{fill: 'hsl(var(--muted))', opacity: 0.1}} 
+                      cursor={{fill: 'hsl(var(--primary))', opacity: 0.05}} 
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
                           return (
-                            <div className="bg-white p-2 shadow-lg border border-border rounded-md text-xs">
-                              <p className="font-bold">{payload[0].payload.name}</p>
-                              <p className="text-primary font-bold">{payload[0].value?.toFixed(2)} tCO2e</p>
+                            <div className="bg-white p-4 shadow-2xl border border-primary/10 rounded-2xl">
+                              <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">{payload[0].payload.name}</p>
+                              <p className="text-2xl font-black text-primary tabular-nums tracking-tighter">{payload[0].value?.toFixed(2)} <span className="text-xs opacity-50">tco2e</span></p>
                             </div>
                           );
                         }
                         return null;
                       }}
                     />
-                    <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={20} />
+                    <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 8, 8, 0]} barSize={24} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="flex h-64 items-center justify-center text-muted-foreground text-sm italic">Initialize data input to view top drivers.</div>
+              <div className="flex h-[360px] items-center justify-center text-muted-foreground text-[10px] italic font-black uppercase tracking-[.3em] opacity-40">Awaiting Hotspot Analysis</div>
             )}
           </CardContent>
         </Card>
       </div>
 
       {/* Audit Readiness Log */}
-      <Card className="shadow-sm border-muted/20">
-        <CardHeader className="border-b border-muted/10 bg-muted/5">
+      <Card className="shadow-2xl border-none bg-white rounded-3xl overflow-hidden ring-1 ring-black/5">
+        <CardHeader className="bg-muted/30 border-b border-muted/50 px-8 py-8">
           <div className="flex justify-between items-center">
-            <div>
-              <CardTitle className="text-lg font-heading tracking-tight">Direct Data Inventory</CardTitle>
-              <CardDescription>Comprehensive audit-ready emission record log</CardDescription>
+            <div className="space-y-1">
+              <CardTitle className="text-xl font-black font-heading text-primary uppercase tracking-tight">Direct Inventory Registry</CardTitle>
+              <CardDescription className="text-[10px] font-black uppercase text-muted-foreground tracking-widest italic opacity-60">High-fidelity audit records for reconciliation</CardDescription>
             </div>
-            <Button variant="outline" size="sm" className="font-bold border-primary/20 hover:bg-primary/5">
-              Export Audit Report
+            <Button className="bg-primary hover:bg-primary/95 text-white font-black uppercase tracking-widest text-[10px] h-12 px-6 rounded-xl shadow-xl shadow-primary/20 flex items-center gap-2">
+              <Download className="w-4 h-4" /> Export Verification Pack
             </Button>
           </div>
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="p-10 text-center text-muted-foreground">Synchronizing with audit records...</div>
+            <div className="p-20 flex flex-col items-center justify-center gap-4 text-muted-foreground">
+               <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
+               <span className="text-[10px] font-black uppercase tracking-widest">Synchronizing Ledger...</span>
+            </div>
           ) : entriesList.length === 0 ? (
-            <div className="p-10 text-center text-muted-foreground italic">Clean Slate: No activity entries currently recorded.</div>
+            <div className="p-20 text-center flex flex-col items-center gap-4">
+               <div className="p-4 bg-muted/20 rounded-full text-muted-foreground/30"><ListChecks className="w-12 h-12" /></div>
+               <p className="text-muted-foreground font-black uppercase tracking-widest text-[11px] italic opacity-40">Clean Audit Slate: No Records</p>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-muted/30 text-muted-foreground border-b text-left">
-                    <th className="px-6 py-3 font-semibold text-[10px] uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 font-semibold text-[10px] uppercase tracking-wider">Scope Class</th>
-                    <th className="px-6 py-3 font-semibold text-[10px] uppercase tracking-wider">Activity Category</th>
-                    <th className="px-6 py-3 font-semibold text-[10px] uppercase tracking-wider text-right">Qty / Input</th>
-                    <th className="px-6 py-3 font-semibold text-[10px] uppercase tracking-wider text-right">GHG Impact</th>
-                    <th className="px-6 py-3 font-semibold text-[10px] uppercase tracking-wider">Quality</th>
+                  <tr className="bg-muted/10 text-muted-foreground border-b border-muted/30">
+                    <th className="px-8 py-5 font-black text-[9px] uppercase tracking-[.2em] text-left">Status</th>
+                    <th className="px-8 py-5 font-black text-[9px] uppercase tracking-[.2em] text-left">Internal Chain</th>
+                    <th className="px-8 py-5 font-black text-[9px] uppercase tracking-[.2em] text-left">Categorization</th>
+                    <th className="px-8 py-5 font-black text-[9px] uppercase tracking-[.2em] text-right">Qty / Input</th>
+                    <th className="px-8 py-5 font-black text-[9px] uppercase tracking-[.2em] text-right">GHG Footprint</th>
+                    <th className="px-8 py-5 font-black text-[9px] uppercase tracking-[.2em] text-center">Quality</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-muted/10">
                   {entriesList.slice(0, 10).map(e => (
-                    <tr key={e.id} className="hover:bg-muted/5 transition-colors">
-                      <td className="px-6 py-4">
+                    <tr key={e.id} className="group hover:bg-primary/5 transition-all duration-300">
+                      <td className="px-8 py-6">
                         {e.status === 'verified' ? (
-                          <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none text-[10px]">Verified</Badge>
+                          <Badge className="bg-white text-primary border border-primary/20 shadow-sm font-black italic text-[9px] uppercase tracking-widest px-3 py-1">Verified</Badge>
                         ) : e.status === 'pending_audit' ? (
-                          <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none text-[10px]">Pending</Badge>
+                          <Badge className="bg-secondary/10 text-secondary border border-secondary/20 font-black italic text-[9px] uppercase tracking-widest px-3 py-1 shadow-sm">Audit Queue</Badge>
                         ) : (
-                          <Badge variant="outline" className="text-[10px] text-muted-foreground">Draft</Badge>
+                          <Badge variant="outline" className="text-[9px] font-black uppercase tracking-widest italic text-muted-foreground border-muted/50 px-3 py-1">Local Draft</Badge>
                         )}
                       </td>
-                      <td className="px-6 py-4 font-semibold italic text-primary/80">{e.scope}</td>
-                      <td className="px-6 py-4">
+                      <td className="px-8 py-6">
+                         <div className="flex flex-col">
+                            <span className="font-black text-primary italic uppercase tracking-tighter text-sm underline underline-offset-4 decoration-primary/20">{e.scope}</span>
+                            <span className="text-[9px] font-black text-muted-foreground opacity-40 uppercase tracking-widest mt-1">Tier 1 Stream</span>
+                         </div>
+                      </td>
+                      <td className="px-8 py-6">
                         <div className="flex flex-col">
-                          <span className="font-bold text-gray-800">{e.category}</span>
-                          <span className="text-[11px] text-muted-foreground italic flex items-center gap-1">
+                          <span className="font-black text-primary/80 uppercase tracking-tight text-xs">{e.category}</span>
+                          <span className="text-[10px] text-muted-foreground font-black italic mt-0.5 truncate max-w-[180px]">
                             {e.activity_type}
-                            {e.is_assumed_factor && <span className="text-orange-600 font-bold tracking-tighter">[!]</span>}
+                            {e.is_assumed_factor && <span className="text-orange-600 font-black ml-1">[PROXY APPLIED]</span>}
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-right tabular-nums text-muted-foreground">
-                        {e.quantity} {e.unit}
+                      <td className="px-8 py-6 text-right font-black text-muted-foreground tabular-nums opacity-60">
+                        {e.quantity.toLocaleString()} <span className="text-[9px] uppercase">{e.unit}</span>
                       </td>
-                      <td className="px-6 py-4 text-right font-bold text-gray-900">
+                      <td className="px-8 py-6 text-right font-black text-primary text-base tabular-nums tracking-tighter">
                         {formatEmission(e.emission_kgco2e || 0)}
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-1.5">
+                      <td className="px-8 py-6 flex justify-center">
+                        <div className="flex flex-col items-center gap-1.5 bg-muted/20 px-4 py-1.5 rounded-xl border border-muted/50">
                            <div className={cn(
-                             "w-2 h-2 rounded-full",
-                             e.data_quality === 'High' ? "bg-primary" : e.data_quality === 'Medium' ? "bg-secondary" : "bg-orange-400"
+                             "w-2.5 h-2.5 rounded-full shadow-inner",
+                             e.data_quality === 'High' ? "bg-primary" : e.data_quality === 'Medium' ? "bg-secondary" : "bg-orange-500"
                            )} />
-                           <span className="text-[11px] font-medium">{e.data_quality}</span>
+                           <span className="text-[8px] font-black uppercase tracking-widest opacity-60">{e.data_quality} Confidence</span>
                         </div>
                       </td>
                     </tr>
@@ -308,6 +316,19 @@ export default function Dashboard() {
           )}
         </CardContent>
       </Card>
+      
+      <div className="flex items-center justify-between p-8 bg-black/5 rounded-[2.5rem] border border-black/5 shadow-inner">
+         <div className="flex items-center gap-6">
+            <div className="p-4 bg-white/50 rounded-2xl shadow-xl"><ShieldCheck className="w-8 h-8 text-primary" /></div>
+            <div>
+               <p className="text-sm font-black text-primary uppercase tracking-[.2em] mb-1">Authenticated Assurance Stream</p>
+               <p className="text-[11px] text-muted-foreground font-medium italic max-w-xl leading-relaxed">System metrics are recalculated in real-time. All data presented in this dashboard is subject to the Maker-Checker workflow prior to formal sustainability disclosure.</p>
+            </div>
+         </div>
+         <Button variant="ghost" className="font-black text-[10px] uppercase tracking-[.4em] text-primary/40 hover:text-primary transition-colors">
+            System Diagnostics 
+         </Button>
+      </div>
     </div>
   );
 }
