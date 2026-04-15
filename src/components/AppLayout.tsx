@@ -36,23 +36,23 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-sidebar-background text-sidebar-foreground transition-all lg:static lg:translate-x-0 border-r border-sidebar-border",
+        "fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-sidebar text-sidebar-foreground transition-all lg:static lg:translate-x-0 border-r border-sidebar-border",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6">
+        <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6 bg-sidebar/50">
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-white shadow-lg">
             <Leaf className="h-5 w-5" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-black font-heading tracking-widest text-white leading-none">SLGTI</span>
-            <span className="text-[10px] text-muted-foreground font-bold tracking-tighter uppercase italic">Carbon Track</span>
+            <span className="text-sm font-black font-heading tracking-widest text-sidebar-foreground leading-none">SLGTI</span>
+            <span className="text-[10px] text-sidebar-foreground/50 font-bold tracking-tighter uppercase italic">Carbon Track</span>
           </div>
         </div>
 
         <nav className="flex-1 space-y-6 p-4 overflow-y-auto mt-2">
           {NAV_ITEMS.map((group) => (
             <div key={group.group} className="space-y-2">
-              <h3 className="px-3 text-[10px] font-black uppercase text-muted-foreground tracking-[.2em]">{group.group}</h3>
+              <h3 className="px-3 text-[10px] font-black uppercase text-sidebar-foreground/40 tracking-[.2em]">{group.group}</h3>
               <div className="space-y-1">
                 {group.items.map(({ to, label, icon: Icon }) => {
                   const active = pathname === to;
@@ -64,11 +64,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
                       className={cn(
                         "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-all duration-200 group relative",
                         active
-                          ? "bg-primary text-white shadow-md"
-                          : "text-sidebar-foreground/70 hover:bg-white/5 hover:text-white"
+                          ? "bg-primary text-primary-foreground shadow-md"
+                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       )}
                     >
-                      <Icon className={cn("h-4 w-4", active ? "text-white" : "text-muted-foreground group-hover:text-primary")} />
+                      <Icon className={cn("h-4 w-4", active ? "text-primary-foreground" : "text-sidebar-foreground/40 group-hover:text-sidebar-foreground")} />
                       {label}
                       {active && <div className="absolute left-0 w-1 h-4 bg-accent rounded-full" />}
                     </Link>
@@ -79,9 +79,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
           ))}
         </nav>
 
+
         <div className="border-t border-sidebar-border p-4">
-          <div className="mb-2 truncate text-xs text-muted-foreground">{user?.email}</div>
-          <Button variant="ghost" size="sm" className="w-full justify-start text-sidebar-foreground" onClick={signOut}>
+          <div className="mb-2 truncate text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/30">{user?.email}</div>
+          <Button variant="ghost" size="sm" className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" onClick={signOut}>
             <LogOut className="mr-2 h-4 w-4" /> Sign Out
           </Button>
         </div>
