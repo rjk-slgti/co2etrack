@@ -81,4 +81,16 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading tracking-tight;
   }
+
+  .glass-panel {
+    @apply backdrop-blur-xl bg-white/70 border-white/20 shadow-xl;
+  }
+
+  .glass-sidebar {
+    @apply backdrop-blur-2xl bg-sidebar/80 border-sidebar-border/50;
+  }
+
+  .glass-header {
+    @apply backdrop-blur-md bg-white/80 border-b border-border/50;
+  }
 }

@@ -4,12 +4,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatEmission } from '@/lib/calculation-engine';
 import { SCOPE_COLORS } from '@/lib/constants';
-import { BarChart3, TrendingUp, Leaf, AlertTriangle, Zap, Car, Factory, ShieldCheck, Timer, Download, ListChecks } from 'lucide-react';
+import { BarChart3, TrendingUp, Leaf, AlertTriangle, Zap, Car, Factory, ShieldCheck, Timer, Download, ListChecks, Sparkles, FilterX } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { useState, useMemo } from 'react';
 
 export default function Dashboard() {
   const { data: entries, isLoading } = useActivityEntries();
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const entriesList = entries ?? [];
 
@@ -36,6 +38,16 @@ export default function Dashboard() {
     .slice(0, 8)
     .map(([name, value]) => ({ name, value: value / 1000 })); // convert to tonnes
 
+  const filteredEntries = useMemo(() => {
+    if (!selectedCategory) return entriesList;
+    return entriesList.filter(e => e.category === selectedCategory);
+  }, [entriesList, selectedCategory]);
+
+  const topCategory = barData.length > 0 ? barData[0].name : "N/A";
+  const highQualityPercent = entriesList.length > 0 
+    ? (entriesList.filter(e => e.data_quality === 'High').length / entriesList.length) * 100 
+    : 0;
+
   const assumedCount = entriesList.filter(e => e.is_assumed_factor).length;
   const pendingAuditCount = entriesList.filter(e => e.status === 'pending_audit').length;
 
@@ -46,7 +58,7 @@ export default function Dashboard() {
           <Badge variant="outline" className="mb-2 bg-primary/5 text-primary border-primary/20 font-black uppercase tracking-[.3em] text-[9px]">
             Intelligence Dashboard
           </Badge>
-          <h1 className="text-5xl font-black font-heading text-primary uppercase tracking-tighter">Operational Overview</h1>
+          <h1 className="text-5xl font-black font-heading text-primary uppercase tracking-tighter transition-all duration-700 hover:tracking-normal cursor-default">Operational Overview</h1>
           <p className="text-muted-foreground text-lg italic mt-1 font-medium">Sustainability Precision • Audit-Ready Inventory Control</p>
         </div>
         <div className="flex gap-3">
@@ -64,6 +76,32 @@ export default function Dashboard() {
           </Badge>
         </div>
       </div>
+
+      {/* Narrative Analytics Card */}
+      <Card className="border-none shadow-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-[2rem] overflow-hidden ring-1 ring-primary/10">
+        <CardContent className="p-10 flex flex-col md:flex-row items-center gap-10">
+          <div className="p-6 bg-primary rounded-3xl shadow-2xl shadow-primary/20 shrink-0">
+             <Sparkles className="w-10 h-10 text-white" />
+          </div>
+          <div className="flex-1 space-y-4">
+            <div className="flex items-center gap-3">
+               <Badge className="bg-primary text-white border-none font-black italic text-[9px] uppercase tracking-widest px-3 py-1">Narrative Intelligence</Badge>
+               <span className="text-[10px] font-black text-primary/40 uppercase tracking-[.2em]">Inventory Cycle 2024</span>
+            </div>
+            <h2 className="text-3xl font-black text-primary tracking-tight leading-tight">
+              Strategic Summary: {topCategory} is your primary carbon driver.
+            </h2>
+            <p className="text-muted-foreground text-base font-medium leading-relaxed max-w-3xl italic">
+              Currently, Scope 3 contributes significantly to your footprint. While your data quality is at <span className="text-primary font-black uppercase underline decoration-primary/20 underline-offset-4">{highQualityPercent.toFixed(0)}% high-confidence</span>, focus on source verification for {topCategory} to ensure audit readiness for the upcoming compliance window.
+            </p>
+          </div>
+          <div className="flex flex-col items-end gap-2 border-l border-primary/10 pl-10 hidden md:flex">
+             <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Fidelity Score</span>
+             <span className="text-5xl font-black text-primary tabular-nums tracking-tighter">{highQualityPercent.toFixed(0)}%</span>
+             <span className="text-[9px] font-black text-secondary uppercase tracking-tighter italic">Optimized Path</span>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* KPI Cards */}
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
@@ -159,7 +197,24 @@ export default function Dashboard() {
                     >
                       {pieData.map((entry, i) => <Cell key={i} fill={entry.fill} stroke="rgba(255,255,255,0.1)" strokeWidth={2} />)}
                     </Pie>
-                    <Tooltip content={<div className="bg-white p-3 shadow-2xl border border-muted/50 rounded-2xl text-[10px] font-black uppercase tracking-widest" />} />
+                    <Tooltip 
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-white p-4 shadow-3xl border border-primary/10 rounded-2xl ring-1 ring-primary/5">
+                              <p className="text-[10px] font-black text-primary uppercase tracking-[.2em] mb-1">{payload[0].name}</p>
+                              <p className="text-2xl font-black text-primary tabular-nums tracking-tighter">
+                                {((payload[0].value / totalEmissions) * 100).toFixed(1)}%
+                              </p>
+                              <p className="text-[9px] font-bold text-muted-foreground uppercase mt-1">
+                                {formatEmission(payload[0].value)}
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -186,13 +241,34 @@ export default function Dashboard() {
             <CardTitle className="text-xs font-black uppercase text-primary tracking-[.2em] flex items-center gap-3">
               <TrendingUp className="h-5 w-5 opacity-70" /> Strategic Hotspots
             </CardTitle>
-            <Badge className="bg-primary/5 text-primary border-primary/20 font-black italic text-[9px] uppercase tracking-widest px-3 py-1 italic">Top Tonnes (tCO2e)</Badge>
+            <div className="flex items-center gap-3">
+              {selectedCategory && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setSelectedCategory(null)}
+                  className="h-7 px-2 text-[9px] font-black uppercase tracking-widest text-primary/50 hover:text-primary transition-colors flex items-center gap-1.5"
+                >
+                  <FilterX className="w-3 h-3" /> Clear Drill-down
+                </Button>
+              )}
+              <Badge className="bg-primary/5 text-primary border-primary/20 font-black italic text-[9px] uppercase tracking-widest px-3 py-1 italic">Top Tonnes (tCO2e)</Badge>
+            </div>
           </CardHeader>
           <CardContent className="p-10">
             {barData.length > 0 ? (
               <div className="h-[360px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={barData} layout="vertical" margin={{ left: 20 }}>
+                  <BarChart 
+                    data={barData} 
+                    layout="vertical" 
+                    margin={{ left: 20 }}
+                    onClick={(data) => {
+                      if (data && data.activePayload && data.activePayload.length) {
+                        setSelectedCategory(data.activePayload[0].payload.name);
+                      }
+                    }}
+                  >
                     <CartesianGrid strokeDasharray="4 4" horizontal={true} vertical={false} stroke="hsl(var(--muted))" opacity={0.3} />
                     <XAxis type="number" hide />
                     <YAxis 
@@ -203,38 +279,66 @@ export default function Dashboard() {
                       axisLine={false}
                       tickLine={false}
                       tick={{fill: 'currentColor', fontWeight: 900, textTransform: 'uppercase'}}
+                      className="cursor-pointer"
                     />
                     <Tooltip 
                       cursor={{fill: 'hsl(var(--primary))', opacity: 0.05}} 
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
                           return (
-                            <div className="bg-white p-4 shadow-2xl border border-primary/10 rounded-2xl">
-                              <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">{payload[0].payload.name}</p>
-                              <p className="text-2xl font-black text-primary tabular-nums tracking-tighter">{payload[0].value?.toFixed(2)} <span className="text-xs opacity-50">tco2e</span></p>
+                            <div className="bg-white p-4 shadow-3xl border border-primary/10 rounded-2xl ring-1 ring-primary/5">
+                              <div className="flex items-center justify-between gap-4 mb-2">
+                                <p className="text-[10px] font-black text-primary uppercase tracking-[.2em]">{payload[0].payload.name}</p>
+                                <span className="text-[9px] font-black text-secondary italic uppercase tracking-tighter">Click to Drill-down</span>
+                              </div>
+                              <p className="text-3xl font-black text-primary tabular-nums tracking-tighter">{payload[0].value?.toFixed(2)} <span className="text-sm opacity-40 font-bold">tco2e</span></p>
+                              <div className="w-full bg-muted h-1 rounded-full mt-3 overflow-hidden">
+                                 <div className="h-full bg-primary transition-all duration-700" style={{ width: `${(payload[0].value / barData[0].value) * 100}%` }} />
+                              </div>
                             </div>
                           );
                         }
                         return null;
                       }}
                     />
-                    <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 8, 8, 0]} barSize={24} />
+                    <Bar 
+                      dataKey="value" 
+                      radius={[0, 8, 8, 0]} 
+                      barSize={24}
+                      className="cursor-pointer transition-all duration-300"
+                    >
+                      {barData.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={selectedCategory === entry.name ? 'hsl(var(--primary))' : 'hsl(var(--primary) / 0.4)'} 
+                          className="hover:fill-primary transition-all"
+                        />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="flex h-[360px] items-center justify-center text-muted-foreground text-[10px] italic font-black uppercase tracking-[.3em] opacity-40">Awaiting Hotspot Analysis</div>
+              <div className="flex h-[360px] items-center justify-center text-muted-foreground text-[10px] italic font-black uppercase tracking-[.2em] opacity-40">Awaiting Hotspot Analysis</div>
             )}
           </CardContent>
         </Card>
       </div>
 
       {/* Audit Readiness Log */}
-      <Card className="shadow-2xl border-none bg-white rounded-3xl overflow-hidden ring-1 ring-black/5">
+      <Card className="shadow-2xl border-none bg-white rounded-3xl overflow-hidden ring-1 ring-black/5" id="inventory-registry">
         <CardHeader className="bg-muted/30 border-b border-muted/50 px-8 py-8">
           <div className="flex justify-between items-center">
             <div className="space-y-1">
-              <CardTitle className="text-xl font-black font-heading text-primary uppercase tracking-tight">Direct Inventory Registry</CardTitle>
+              <div className="flex items-center gap-3">
+                <CardTitle className="text-xl font-black font-heading text-primary uppercase tracking-tight">Direct Inventory Registry</CardTitle>
+                {selectedCategory && (
+                  <Badge className="bg-primary/5 text-primary border-primary/20 font-black italic text-[9px] uppercase tracking-widest px-3 py-1 italic flex items-center gap-2">
+                    Filtered: {selectedCategory}
+                    <FilterX className="w-3 h-3 cursor-pointer hover:text-red-500" onClick={() => setSelectedCategory(null)} />
+                  </Badge>
+                )}
+              </div>
               <CardDescription className="text-[10px] font-black uppercase text-muted-foreground tracking-widest italic opacity-60">High-fidelity audit records for reconciliation</CardDescription>
             </div>
             <Button className="bg-primary hover:bg-primary/95 text-white font-black uppercase tracking-widest text-[10px] h-12 px-6 rounded-xl shadow-xl shadow-primary/20 flex items-center gap-2">
@@ -248,10 +352,10 @@ export default function Dashboard() {
                <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
                <span className="text-[10px] font-black uppercase tracking-widest">Synchronizing Ledger...</span>
             </div>
-          ) : entriesList.length === 0 ? (
+          ) : filteredEntries.length === 0 ? (
             <div className="p-20 text-center flex flex-col items-center gap-4">
                <div className="p-4 bg-muted/20 rounded-full text-muted-foreground/30"><ListChecks className="w-12 h-12" /></div>
-               <p className="text-muted-foreground font-black uppercase tracking-widest text-[11px] italic opacity-40">Clean Audit Slate: No Records</p>
+               <p className="text-muted-foreground font-black uppercase tracking-widest text-[11px] italic opacity-40">Clean Audit Slate: No Records {selectedCategory ? `for ${selectedCategory}` : ''}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -267,7 +371,7 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-muted/10">
-                  {entriesList.slice(0, 10).map(e => (
+                  {filteredEntries.slice(0, 10).map(e => (
                     <tr key={e.id} className="group hover:bg-primary/5 transition-all duration-300">
                       <td className="px-8 py-6">
                         {e.status === 'verified' ? (

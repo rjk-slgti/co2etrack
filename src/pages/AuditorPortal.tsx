@@ -45,24 +45,29 @@ export default function AuditorPortal() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-10 pb-20">
-      <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-muted pb-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-primary/10 pb-10">
         <div>
-          <Badge variant="outline" className="mb-2 bg-primary/5 text-primary border-primary/20 font-bold uppercase tracking-widest text-[10px]">
-            Auditor Gateway
+          <Badge variant="outline" className="mb-4 bg-primary/5 text-primary border-primary/20 font-black uppercase tracking-[.3em] text-[9px] px-3">
+            Assurance Gateway
           </Badge>
-          <h1 className="text-4xl font-black font-heading text-primary uppercase tracking-tighter">Compliance Review</h1>
-          <p className="text-muted-foreground font-medium italic mt-1">Maker-Checker Verification Workflow (ISO 14064 Compliance)</p>
+          <h1 className="text-5xl font-black font-heading text-primary uppercase tracking-tighter">Compliance Review</h1>
+          <p className="text-muted-foreground font-medium italic mt-2 text-lg">Maker-Checker Verification Workflow • ISO 14064 Compliance</p>
         </div>
-        <div className="flex items-center gap-3">
-           <div className="flex flex-col items-end mr-2">
-              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Queue Status</span>
-              <span className="text-sm font-bold text-primary">{entries?.length || 0} Pending Items</span>
+        <div className="flex items-center gap-6 bg-white shadow-2xl rounded-3xl p-6 ring-1 ring-black/5">
+           <div className="flex flex-col items-center border-r border-primary/10 pr-6 gap-1">
+              <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Active Queue</span>
+              <span className="text-2xl font-black text-primary tabular-nums tracking-tighter">{entries?.length || 0}</span>
            </div>
-           <Badge className="bg-primary text-white px-4 py-1.5 font-bold shadow-lg">
-             <ShieldCheck className="w-4 h-4 mr-2" /> Secure Queue
-           </Badge>
+           <div className="flex flex-col items-start gap-1">
+              <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">System Trust</span>
+              <div className="flex items-center gap-2">
+                <BadgeCheck className="w-5 h-5 text-primary" />
+                <span className="text-sm font-black text-primary italic uppercase tracking-tighter">Secure Stream</span>
+              </div>
+           </div>
         </div>
       </div>
+
 
       {isLoading ? (
         <div className="flex flex-col items-center justify-center p-32 text-muted-foreground italic bg-white/50 rounded-3xl border-2 border-dashed border-muted">

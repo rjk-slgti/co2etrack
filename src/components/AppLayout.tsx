@@ -36,7 +36,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-sidebar text-sidebar-foreground transition-all lg:static lg:translate-x-0 border-r border-sidebar-border",
+        "fixed inset-y-0 left-0 z-50 flex w-64 flex-col glass-sidebar text-sidebar-foreground transition-all lg:static lg:translate-x-0",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6 bg-sidebar/50">
@@ -90,7 +90,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden bg-background">
-        <header className="flex h-16 items-center border-b bg-white px-4 lg:px-6 shadow-sm">
+        <header className="flex h-16 items-center glass-header px-4 lg:px-6 shadow-sm z-10">
           <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setSidebarOpen(true)}>
             <Menu className="h-5 w-5" />
           </Button>
