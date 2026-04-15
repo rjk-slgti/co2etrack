@@ -20,7 +20,7 @@ export default function Dashboard() {
     return acc;
   }, {} as Record<string, number>);
 
-  const totalEmissions = Object.values(scopeTotals).reduce((a, b) => a + b, 0);
+  const totalEmissions = Object.values(scopeTotals).reduce((a: number, b: number) => a + b, 0);
 
   const pieData = Object.entries(scopeTotals).map(([scope, value]) => ({
     name: scope,
@@ -34,9 +34,9 @@ export default function Dashboard() {
   }, {} as Record<string, number>);
 
   const barData = Object.entries(categoryTotals)
-    .sort((a, b) => b[1] - a[1])
+    .sort((a, b) => (b[1] as number) - (a[1] as number))
     .slice(0, 8)
-    .map(([name, value]) => ({ name, value: value / 1000 })); // convert to tonnes
+    .map(([name, value]) => ({ name, value: (value as number) / 1000 }));
 
   const filteredEntries = useMemo(() => {
     if (!selectedCategory) return entriesList;
@@ -114,8 +114,8 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="relative z-10">
             <div className="text-5xl font-black tracking-tighter flex items-baseline gap-2">
-               {formatEmission(totalEmissions).split(' ')[0]}
-               <span className="text-xl opacity-70 italic">{formatEmission(totalEmissions).split(' ')[1]}</span>
+               {formatEmission(totalEmissions as number).split(' ')[0]}
+               <span className="text-xl opacity-70 italic">{formatEmission(totalEmissions as number).split(' ')[1]}</span>
             </div>
             <p className="text-[9px] mt-4 font-black uppercase tracking-widest opacity-60">Inventory period: 2024 CY</p>
           </CardContent>
@@ -138,7 +138,7 @@ export default function Dashboard() {
                 {formatEmission(scope.value || 0)}
               </div>
               <div className="w-full bg-muted h-1.5 rounded-full mt-5 overflow-hidden ring-1 ring-black/5">
-                 <div className="h-full transition-all duration-1000 ease-out" style={{ backgroundColor: scope.color, width: `${(scope.value / (totalEmissions || 1)) * 100}%` }} />
+                 <div className="h-full transition-all duration-1000 ease-out" style={{ backgroundColor: scope.color, width: `${((scope.value as number) / ((totalEmissions as number) || 1)) * 100}%` }} />
               </div>
             </CardContent>
           </Card>
@@ -204,10 +204,10 @@ export default function Dashboard() {
                             <div className="bg-white p-4 shadow-3xl border border-primary/10 rounded-2xl ring-1 ring-primary/5">
                               <p className="text-[10px] font-black text-primary uppercase tracking-[.2em] mb-1">{payload[0].name}</p>
                               <p className="text-2xl font-black text-primary tabular-nums tracking-tighter">
-                                {((payload[0].value / totalEmissions) * 100).toFixed(1)}%
+                                {((Number(payload[0].value) / (totalEmissions as number)) * 100).toFixed(1)}%
                               </p>
                               <p className="text-[9px] font-bold text-muted-foreground uppercase mt-1">
-                                {formatEmission(payload[0].value)}
+                                {formatEmission(Number(payload[0].value))}
                               </p>
                             </div>
                           );
@@ -225,7 +225,7 @@ export default function Dashboard() {
                       <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.fill }} />
                       <span className="text-[10px] font-black text-muted-foreground uppercase">{d.name}</span>
                     </div>
-                    <span className="font-black text-primary text-xs">{totalEmissions > 0 ? ((d.value/totalEmissions)*100).toFixed(0) : 0}%</span>
+                    <span className="font-black text-primary text-xs">{(totalEmissions as number) > 0 ? (((d.value as number)/((totalEmissions as number)))*100).toFixed(0) : 0}%</span>
                   </div>
                 ))}
               </div>
@@ -278,7 +278,7 @@ export default function Dashboard() {
                       width={120}
                       axisLine={false}
                       tickLine={false}
-                      tick={{fill: 'currentColor', fontWeight: 900, textTransform: 'uppercase'}}
+                      tick={{fill: 'currentColor', fontWeight: 900}}
                       className="cursor-pointer"
                     />
                     <Tooltip 
@@ -291,9 +291,9 @@ export default function Dashboard() {
                                 <p className="text-[10px] font-black text-primary uppercase tracking-[.2em]">{payload[0].payload.name}</p>
                                 <span className="text-[9px] font-black text-secondary italic uppercase tracking-tighter">Click to Drill-down</span>
                               </div>
-                              <p className="text-3xl font-black text-primary tabular-nums tracking-tighter">{payload[0].value?.toFixed(2)} <span className="text-sm opacity-40 font-bold">tco2e</span></p>
+                              <p className="text-3xl font-black text-primary tabular-nums tracking-tighter">{Number(payload[0].value)?.toFixed(2)} <span className="text-sm opacity-40 font-bold">tco2e</span></p>
                               <div className="w-full bg-muted h-1 rounded-full mt-3 overflow-hidden">
-                                 <div className="h-full bg-primary transition-all duration-700" style={{ width: `${(payload[0].value / barData[0].value) * 100}%` }} />
+                                 <div className="h-full bg-primary transition-all duration-700" style={{ width: `${(Number(payload[0].value) / barData[0].value) * 100}%` }} />
                               </div>
                             </div>
                           );

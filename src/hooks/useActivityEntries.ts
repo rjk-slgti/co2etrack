@@ -3,14 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { MockDB } from '@/lib/mock-database';
 import { useAuth } from './useAuth';
 
-export function useActivityEntries(organizationId?: string, status?: 'draft' | 'pending_audit' | 'verified' | 'rejected') {
+export function useActivityEntries(organizationId?: string) {
   return useQuery({
-    queryKey: ['activity-entries', organizationId, status],
+    queryKey: ['activity-entries', organizationId],
     queryFn: async () => {
       try {
-        let query = supabase.from('activity_entries').select('*, emission_factor_headers(category, activity_type, source, source_version, region), activity_evidence(*)');
+        let query = supabase.from('activity_entries').select('*');
         if (organizationId) query = query.eq('organization_id', organizationId);
-        if (status) query = query.eq('status', status);
         const { data, error } = await query.order('created_at', { ascending: false });
         if (error) throw error;
         return data;
@@ -19,7 +18,6 @@ export function useActivityEntries(organizationId?: string, status?: 'draft' | '
         const entries = MockDB.getEntries();
         let filtered = entries;
         if (organizationId) filtered = filtered.filter((e: any) => e.organization_id === organizationId);
-        if (status) filtered = filtered.filter((e: any) => e.status === status);
         return filtered;
       }
     },
@@ -53,14 +51,36 @@ export function useCreateActivityEntry() {
       is_assumed_factor?: boolean;
       notes?: string;
       reporting_period_id?: string;
-      status?: 'draft' | 'pending_audit';
     }) => {
       if (!user) throw new Error('Not authenticated');
       let data;
       try {
         const { data: dbData, error } = await supabase
           .from('activity_entries')
-          .insert({ ...entry, user_id: user.id })
+          .insert([{
+            activity_type: entry.activity_type,
+            category: entry.category,
+            converted_quantity: entry.converted_quantity,
+            converted_unit: entry.converted_unit,
+            data_quality: entry.data_quality,
+            emission_ch4: entry.emission_ch4,
+            emission_co2: entry.emission_co2,
+            emission_kgco2e: entry.emission_kgco2e,
+            emission_n2o: entry.emission_n2o,
+            factor_id: entry.factor_id,
+            factor_value_id: entry.factor_value_id,
+            is_assumed_factor: entry.is_assumed_factor,
+            location_based_emission: entry.location_based_emission,
+            market_based_emission: entry.market_based_emission,
+            notes: entry.notes,
+            organization_id: entry.organization_id,
+            quantity: entry.quantity,
+            reporting_period_id: entry.reporting_period_id,
+            scope: entry.scope,
+            scope_category: entry.scope_category,
+            unit: entry.unit,
+            user_id: user.id,
+          }])
           .select()
           .single();
         if (error) throw error;
@@ -73,52 +93,11 @@ export function useCreateActivityEntry() {
           user_id: user.id,
           action: 'create_entry',
           factor_id: entry.factor_id,
-          factor_source: undefined,
           details: { scope: entry.scope, category: entry.category, quantity: entry.quantity, unit: entry.unit },
         });
       } catch (e) {
         console.log("Fallback to MockDB SAVE");
         data = MockDB.saveEntry({ ...entry, user_id: user.id });
-      }
-
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['activity-entries'] });
-    },
-  });
-}
-
-export function useUpdateEntryStatus() {
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
-
-  return useMutation({
-    mutationFn: async ({ entryId, status, orgId }: { entryId: string, status: 'draft' | 'pending_audit' | 'verified' | 'rejected', orgId: string }) => {
-      if (!user) throw new Error('Not authenticated');
-      
-      let data;
-      try {
-        const { data: dbData, error } = await supabase
-          .from('activity_entries')
-          .update({ status })
-          .eq('id', entryId)
-          .select()
-          .single();
-          
-        if (error) throw error;
-        data = dbData;
-
-        await supabase.from('audit_logs').insert({
-          organization_id: orgId,
-          activity_entry_id: entryId,
-          user_id: user.id,
-          action: `status_changed_to_${status}`,
-          details: { new_status: status },
-        });
-      } catch (e) {
-        console.log("Fallback to MockDB UPDATE");
-        data = MockDB.updateStatus(entryId, status);
       }
 
       return data;
