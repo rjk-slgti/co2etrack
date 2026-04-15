@@ -94,3 +94,63 @@
     @apply backdrop-blur-md bg-white/80 border-b border-border/50;
   }
 }
+
+@media print {
+  @page {
+    margin: 1.5cm;
+    size: A4 portrait;
+  }
+
+  body {
+    background: white !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide UI elements */
+  aside, 
+  header, 
+  nav, 
+  button, 
+  .print-hide {
+    display: none !important;
+  }
+
+  /* Expand main content */
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Print specific utilities */
+  .print-only {
+    display: block !important;
+  }
+
+  .print-break-after {
+    page-break-after: always !important;
+  }
+
+  .print-break-inside-avoid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .Card, .card {
+    border: 1px solid #e5e7eb !important;
+    box-shadow: none !important;
+    break-inside: avoid !important;
+  }
+
+  /* Typography for print */
+  h1 { font-size: 24pt !important; }
+  h2 { font-size: 18pt !important; }
+  h3 { font-size: 14pt !important; }
+  p, span, td { font-size: 10pt !important; }
+}
+
+.print-only {
+  display: none;
+}

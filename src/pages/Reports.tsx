@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatEmission } from '@/lib/calculation-engine';
 import { SCOPE_CATEGORIES, SCOPE_COLORS } from '@/lib/constants';
-import { FileText, Download, BarChart3, Printer, ExternalLink, ShieldCheck } from 'lucide-react';
+import { FileText, Download, BarChart3, Printer, ExternalLink, ShieldCheck, Leaf, MapPin, Globe, Award, Signature, CheckDouble } from 'lucide-react';
 
 export default function Reports() {
   const { data: entries } = useActivityEntries();
@@ -44,6 +44,99 @@ export default function Reports() {
     URL.revokeObjectURL(url);
   };
 
+  const CoverPage = () => (
+    <div className="print-only print-break-after h-[280mm] flex flex-col justify-between items-center py-20 text-center border-[20px] border-primary/5 m-4">
+      <div className="space-y-6">
+        <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto mb-10">
+          <Leaf className="w-20 h-20 text-primary" />
+        </div>
+        <h1 className="text-6xl font-black text-primary uppercase tracking-tighter leading-none">Greenhouse Gas<br />Inventory Statement</h1>
+        <div className="h-1.5 w-32 bg-secondary mx-auto rounded-full" />
+        <p className="text-2xl font-black text-muted-foreground uppercase tracking-[.3em] mt-4 italic">Operational Control Approach</p>
+      </div>
+
+      <div className="space-y-4">
+        <p className="text-xl font-bold text-gray-500 uppercase tracking-widest">Reporting Entity</p>
+        <p className="text-4xl font-black text-primary uppercase tracking-tight">SLGTI Global Solutions Ltd.</p>
+        <div className="flex items-center gap-4 justify-center mt-6">
+          <Badge className="bg-primary/10 text-primary border-none text-xs font-black uppercase px-4 py-1.5">ISO 14064-1 Aligned</Badge>
+          <Badge className="bg-secondary/10 text-secondary border-none text-xs font-black uppercase px-4 py-1.5">2024 Cycle</Badge>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-12 w-full max-w-3xl px-12 border-t border-primary/10 pt-16">
+        <div className="flex flex-col items-center gap-2">
+          <Globe className="w-6 h-6 text-primary opacity-40" />
+          <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Global Reach</span>
+        </div>
+        <div className="flex flex-col items-center gap-2">
+          <Award className="w-6 h-6 text-primary opacity-40" />
+          <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Certified Integrity</span>
+        </div>
+        <div className="flex flex-col items-center gap-2">
+          <MapPin className="w-6 h-6 text-primary opacity-40" />
+          <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Sri Lanka Hub</span>
+        </div>
+      </div>
+    </div>
+  );
+
+  const AssuranceSection = () => (
+    <div className="print-only space-y-12 py-10 print-break-inside-avoid">
+       <div className="border-l-8 border-primary pl-8 space-y-4">
+         <h2 className="text-3xl font-black text-primary uppercase tracking-tighter">Statement of Assurance</h2>
+         <p className="text-muted-foreground font-medium italic">This inventory has been prepared in accordance with the GHG Protocol Corporate Accounting and Reporting Standard.</p>
+       </div>
+
+       <div className="grid grid-cols-2 gap-8">
+         <div className="space-y-4 bg-muted/5 p-6 rounded-3xl border border-muted/20">
+           <h3 className="text-sm font-black text-primary uppercase tracking-widest flex items-center gap-2">
+             <CheckDouble className="w-4 h-4" /> Methodology Summary
+           </h3>
+           <p className="text-[11px] leading-relaxed text-muted-foreground font-bold">
+             Global Warming Potentials (GWPs) are sourced from the IPCC Sixth Assessment Report (AR6). 
+             Activity data is collected through direct utility billing and verified supply chain procurement records.
+           </p>
+         </div>
+         <div className="space-y-4 bg-muted/5 p-6 rounded-3xl border border-muted/20">
+           <h3 className="text-sm font-black text-primary uppercase tracking-widest flex items-center gap-2">
+             <MapPin className="w-4 h-4" /> Reporting Boundary
+           </h3>
+           <p className="text-[11px] leading-relaxed text-muted-foreground font-bold">
+             Consolidation of GHG emissions is based on Operational Control. 
+             All facilities owned and leased by the reporting entity are included in the scope.
+           </p>
+         </div>
+       </div>
+
+       <div className="pt-20 flex justify-between items-end border-t border-muted/30">
+          <div className="space-y-8">
+            <div className="space-y-2">
+               <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Authorized Signatory</p>
+               <div className="h-16 w-64 border-b border-muted flex items-end pb-2">
+                  <Signature className="w-8 h-8 text-primary opacity-20" />
+               </div>
+            </div>
+            <p className="text-[11px] font-bold text-gray-400">Chief Sustainability Officer (CSO)</p>
+          </div>
+          <div className="text-right space-y-4">
+             <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary font-black uppercase italic tracking-widest px-4 py-2">Verified Stream</Badge>
+             <p className="text-[10px] font-black uppercase text-muted-foreground opacity-50">Date: {new Date().toLocaleDateString()}</p>
+          </div>
+       </div>
+    </div>
+  );
+
+  const PrintFooter = () => (
+    <div className="print-only fixed bottom-0 left-0 w-full pt-4 border-t border-muted/20 flex justify-between items-center text-[9px] font-black text-muted-foreground uppercase tracking-widest bg-white">
+      <span>GHG Statement: SLGTI-2024-CORE</span>
+      <span>Confidential Disclosure</span>
+      <div className="flex items-center gap-1">
+        Page <span className="text-primary after:content-['']"></span>
+      </div>
+    </div>
+  );
+
   return (
     <div className="max-w-6xl mx-auto space-y-10 pb-20">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-muted pb-8">
@@ -65,11 +158,14 @@ export default function Reports() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        {/* Print Cover Page Component */}
+        <CoverPage />
+
         {/* Main Report Body */}
         <div className="lg:col-span-8 space-y-10 print:col-span-12">
           
           {/* Summary Table */}
-          <Card className="shadow-2xl border-none bg-white overflow-hidden ring-1 ring-black/5">
+          <Card className="shadow-2xl border-none bg-white overflow-hidden ring-1 ring-black/5 print-break-inside-avoid">
             <CardHeader className="bg-primary pt-8 pb-8 px-8">
               <div className="flex justify-between items-start">
                 <div>
@@ -132,8 +228,11 @@ export default function Reports() {
             </CardContent>
           </Card>
 
+          {/* Print Assurance Section Component */}
+          <AssuranceSection />
+
           {/* Detailed breakdown per scope category */}
-          <Card className="shadow-xl border-none bg-white rounded-3xl overflow-hidden ring-1 ring-black/5">
+          <Card className="shadow-xl border-none bg-white rounded-3xl overflow-hidden ring-1 ring-black/5 print-break-inside-avoid">
             <CardHeader className="bg-secondary/5 border-b border-secondary/10 pt-6 pb-6 px-8">
               <CardTitle className="text-secondary flex items-center gap-3 font-heading tracking-tight uppercase text-lg font-black">
                 <BarChart3 className="h-6 w-6" /> Scope 3 Significance Matrix
@@ -177,6 +276,39 @@ export default function Reports() {
               )}
             </CardContent>
           </Card>
+
+          {/* Full Registry Section for Print */}
+          <div className="print-only print-break-before space-y-8 pt-10">
+            <div className="border-l-8 border-secondary pl-8">
+              <h2 className="text-3xl font-black text-primary uppercase tracking-tighter">Inventory Ledger</h2>
+              <p className="text-muted-foreground font-medium italic mt-1">Full transaction registry of verified emission sources.</p>
+            </div>
+            
+            <table className="w-full text-[9px] border-collapse">
+               <thead>
+                 <tr className="bg-primary/5 text-primary text-left font-black uppercase tracking-widest">
+                   <th className="py-3 px-4 border">Date</th>
+                   <th className="py-3 px-4 border">Scope</th>
+                   <th className="py-3 px-4 border">Activity Type</th>
+                   <th className="py-3 px-4 border text-right">Quantity</th>
+                   <th className="py-3 px-4 border text-right">Emission (kg)</th>
+                   <th className="py-3 px-4 border text-center">Quality</th>
+                 </tr>
+               </thead>
+               <tbody>
+                 {entriesList.map((e, i) => (
+                   <tr key={i} className="hover:bg-muted/5">
+                     <td className="py-2 px-4 border">{new Date(e.entry_date).toLocaleDateString()}</td>
+                     <td className="py-2 px-4 border font-bold uppercase">{e.scope}</td>
+                     <td className="py-2 px-4 border uppercase italic">{e.activity_type}</td>
+                     <td className="py-2 px-4 border text-right tabular-nums">{e.quantity} {e.unit}</td>
+                     <td className="py-2 px-4 border text-right tabular-nums font-black">{e.emission_kgco2e.toFixed(2)}</td>
+                     <td className="py-2 px-4 border text-center font-black uppercase">{e.data_quality}</td>
+                   </tr>
+                 ))}
+               </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Sidebar Info Column */}
@@ -219,12 +351,14 @@ export default function Reports() {
                  <h4 className="font-black text-white text-lg uppercase tracking-tight">Formal Statement</h4>
                  <p className="text-[10px] text-white/60 mt-2 font-bold uppercase tracking-widest leading-relaxed">Prepare high-resolution PDF for regulatory submissions and annual reports.</p>
                  
-                 <Button variant="ghost" className="mt-8 w-full border border-white/20 text-white hover:bg-white hover:text-secondary font-black text-[10px] uppercase tracking-[.3em] h-12 rounded-xl transition-all">
+                 <Button variant="ghost" onClick={() => window.print()} className="mt-8 w-full border border-white/20 text-white hover:bg-white hover:text-secondary font-black text-[10px] uppercase tracking-[.3em] h-12 rounded-xl transition-all">
                    Preview Template <ExternalLink className="w-3.5 h-3.5 ml-2" />
                  </Button>
               </div>
            </Card>
         </div>
+
+        <PrintFooter />
       </div>
     </div>
   );
