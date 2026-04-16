@@ -166,7 +166,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                       <AssetCard 
                         id="commercial" 
                         name="Commercial Office" 
-                        icon={<Business className="h-6 w-6" />}
+                        icon={<Briefcase className="h-6 w-6" />}
                         selected={formData.buildingType === 'commercial'}
                         onClick={() => setFormData({...formData, buildingType: 'commercial'})}
                       />
