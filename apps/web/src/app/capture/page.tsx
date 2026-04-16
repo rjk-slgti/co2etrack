@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Beaker, Droplets, Info, Plus, Save, Thermometer, Wind } from "lucide-react";
+import { Beaker, Droplets, Info, Plus, Save, Shield, Thermometer, Wind } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
