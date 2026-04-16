@@ -1,6 +1,16 @@
-import numpy as np
-from pydantic import BaseModel
-from typing import List, Dict
+# Engineering Charter: IPCC AR6 GWP (CO2=1, CH4_non_fossil=27.0, CH4_fossil=29.8, N2O=273)
+GWP_AR6 = {
+    "CO2": 1.0,
+    "CH4_NON_FOSSIL": 27.0,
+    "CH4_FOSSIL": 29.8,
+    "N2O": 273.0
+}
+
+# Sri Lanka CEB/IEA Grid Defaults (kgCO2e/kWh)
+GRID_FACTORS_SL = {
+    "2023_GRID": 0.457, # CEB 2023
+    "FOSSIL_GEN": 0.820, # Diesel Generator benchmark
+}
 
 class SensorProfile(BaseModel):
     name: str
