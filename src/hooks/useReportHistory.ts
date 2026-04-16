@@ -30,7 +30,7 @@ export function useReportHistory() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as ReportJobRecord[];
+      return (data as unknown) as ReportJobRecord[];
     },
     enabled: !!settings.selectedOrganizationId,
   });

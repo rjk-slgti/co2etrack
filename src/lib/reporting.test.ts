@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildExcelWorkbook, buildExecutiveNarrative, buildPrintableReportHtml } from './reporting';
+import { buildExcelWorkbook, buildExecutiveNarrative, buildReportHtml } from './reporting';
 
 const payload = {
   settings: {

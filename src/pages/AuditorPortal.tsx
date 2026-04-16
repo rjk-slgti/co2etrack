@@ -52,7 +52,7 @@ export default function AuditorPortal() {
           </div>
           <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">Auditor Workspace</h1>
           <p className="text-slate-500 max-w-2xl">
-            Validate organizational boundaries, verify high-impact activity data, and finalize the {organization?.reporting_standard ?? 'GHG Protocol'} inventory for {organization?.name}.
+            Validate organizational boundaries, verify high-impact activity data, and finalize the {'GHG Protocol'} inventory for {organization?.name}.
           </p>
         </div>
         <div className="flex gap-3">
@@ -84,7 +84,7 @@ export default function AuditorPortal() {
         <MetricCard 
           label="Phys. Intensity" 
           value={`${summary.intensity.intensity_fte} kg/FTE`} 
-          subtext={`${organization?.fte_count ?? 1} Team members`}
+          subtext={`Team members`}
           icon={<LineChart className="h-4 w-4 text-orange-500" />}
         />
         <MetricCard 
