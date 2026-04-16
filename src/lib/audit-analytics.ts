@@ -308,7 +308,7 @@ export function buildComplianceChecklist(entries: ActivityEntryRecord[]): Compli
 
 export function buildWorkspaceSummary(
   entries: ActivityEntryRecord[],
-  organization?: { fte_count: number; revenue_usd: number; floor_area_sqm: number; building_type?: string }
+  organization?: { fte_count: number; revenue_usd: number; floor_area_sqm: number; student_count: number; building_type?: string }
 ): WorkspaceSummary {
   const totalKg = entries.reduce((sum, entry) => sum + safeNumber(entry.emission_kgco2e), 0);
   const totalBiogenicKg = entries.reduce((sum, entry) => sum + safeNumber(entry.kg_biogenic_co2), 0);
@@ -346,16 +346,19 @@ export function buildWorkspaceSummary(
   const fte = organization?.fte_count ?? 1;
   const revenue = organization?.revenue_usd ?? 1;
   const area = organization?.floor_area_sqm ?? 1;
+  const students = organization?.student_count ?? 1;
   
   const buildingStats = calculateBuildingIntensity(totalKg, area, organization?.building_type as any);
 
-  const intensity: IntensityMetrics & { building_performance_index?: number; is_optimal?: boolean } = {
+  const intensity: IntensityMetrics = {
     fte_count: fte,
     revenue_usd: revenue,
     floor_area_sqm: area,
+    student_count: students,
     intensity_revenue: round(totalKg / Math.max(revenue, 1), 4),
     intensity_fte: round(totalKg / Math.max(fte, 1), 2),
     carbon_intensity_area: round(totalKg / Math.max(area, 1), 2),
+    intensity_student: round(totalKg / Math.max(students, 1), 2),
     building_performance_index: typeof buildingStats === 'object' ? buildingStats.intensity : 0,
     is_optimal: typeof buildingStats === 'object' ? buildingStats.isOptimal : false
   };

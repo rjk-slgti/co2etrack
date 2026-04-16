@@ -169,6 +169,10 @@ export function selectBestFactor(
 }
 
 export function calculateEmission(quantity: number, unit: string, factor: EmissionFactor): CalculationResult | null {
+  if (quantity < 0) {
+    throw new Error('Audit Error: Negative activity quantities are not permitted under GHG Protocol standard accounting.');
+  }
+
   const converted = convertToStandardUnit(quantity, unit, factor.unit_standard);
   if (!converted) return null;
 

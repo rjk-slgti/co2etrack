@@ -30,13 +30,14 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
     boundaryApproach: settings.boundaryApproach || 'Operational control',
     buildingType: settings.buildingType || 'commercial',
     organizationName: settings.organizationName || '',
+    scopes: ['Scope 1', 'Scope 2', 'Scope 3'],
   });
 
   const nextStep = () => {
-    if (step < 3) setStep(step + 1);
+    if (step < 4) setStep(step + 1);
     else {
       updateSettings(formData);
-      toast.success('Organization boundary defined according to GHG Protocol.');
+      toast.success('Organization boundary and reporting scope defined.');
       onComplete();
     }
   };
@@ -52,14 +53,15 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
               </div>
               <div className="space-y-2">
                 <h2 className="text-2xl font-black">Methodology Setup</h2>
-                <p className="text-slate-400 text-sm font-medium">Step {step} of 3: Define the core accounting boundary for your inventory.</p>
+                <p className="text-slate-400 text-sm font-medium">Step {step} of 4: Define the core accounting boundary.</p>
               </div>
               
               <div className="space-y-4 pt-8">
                 {[
                   { s: 1, label: 'Audit Objective', icon: Flag },
                   { s: 2, label: 'Control Boundary', icon: Map },
-                  { s: 3, label: 'Asset Intelligence', icon: Building2 }
+                  { s: 3, label: 'Inventory Scope', icon: Target },
+                  { s: 4, label: 'Asset Intelligence', icon: Building2 }
                 ].map(({ s, label, icon: Icon }) => (
                   <div key={s} className={cn(
                     "flex items-center gap-4 transition-all duration-300",
@@ -79,7 +81,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
             
             <div className="rounded-3xl bg-white/5 p-6 border border-white/10">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-2">Compliance Note</p>
-              <p className="text-xs text-white/60 leading-relaxed italic">"Consistent boundaries are critical for multi-year tracking and assurance." — GHG Protocol</p>
+              <p className="text-xs text-white/60 leading-relaxed italic">"Consistency in reporting scope ensures audit-ready disclosures."</p>
             </div>
           </div>
 
@@ -151,6 +153,31 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                 {step === 3 && (
                   <div className="space-y-8 animate-in slide-in-from-right-10 duration-500">
                     <div className="space-y-2">
+                      <Label className="text-2xl font-black">Define Reporting Scope</Label>
+                      <p className="text-slate-500 font-medium italic">Select the mandatory and optional scopes for this year.</p>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      {['Scope 1', 'Scope 2', 'Scope 3'].map((scope) => (
+                        <div key={scope} className="flex items-center justify-between p-6 border rounded-3xl hover:bg-slate-50 transition-colors">
+                          <label htmlFor={scope} className="font-black text-lg text-slate-900 cursor-pointer">{scope}</label>
+                          <Switch 
+                            id={scope}
+                            checked={formData.scopes.includes(scope)}
+                            onCheckedChange={(checked) => {
+                              if (checked) setFormData({...formData, scopes: [...formData.scopes, scope]});
+                              else setFormData({...formData, scopes: formData.scopes.filter(s => s !== scope)});
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {step === 4 && (
+                  <div className="space-y-8 animate-in slide-in-from-right-10 duration-500">
+                    <div className="space-y-2">
                       <Label className="text-2xl font-black">Building & Asset Profile</Label>
                       <p className="text-slate-500 font-medium italic">This enables intelligent benchmarking (kg/m²).</p>
                     </div>
@@ -202,7 +229,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                   className="rounded-2xl px-12 h-14 bg-slate-900 text-white font-black shadow-xl shadow-slate-200"
                   onClick={nextStep}
                 >
-                  {step === 3 ? 'Initialize Workspace' : 'Continue'}
+                  {step === 4 ? 'Initialize Workspace' : 'Continue'}
                   <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>

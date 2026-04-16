@@ -23,18 +23,19 @@ import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { useWorkspaceSettings } from '@/hooks/useWorkspaceSettings';
+import { useUserRole } from '@/hooks/useUserRole';
 import { cn } from '@/lib/utils';
 import AuditCopilot from '@/components/AuditCopilot';
 import OnboardingWizard from '@/components/OnboardingWizard';
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Command center', icon: BarChart3, step: 'Dashboard' },
-  { to: '/data-entry', label: 'Emission capture', icon: Activity, step: 'Methodology 03' },
-  { to: '/auditor', label: 'Validation desk', icon: ShieldCheck, step: 'Methodology 09' },
-  { to: '/reports', label: 'Disclosures', icon: FileText, step: 'Methodology 10' },
-  { to: '/emission-factors', label: 'Factor engine', icon: Database, step: 'Methodology 04' },
-  { to: '/audit-log', label: 'Audit history', icon: Shield, step: 'Assurance' },
-  { to: '/settings', label: 'Configuration', icon: Settings, step: 'Boundary' },
+  { to: '/', label: 'Command center', icon: BarChart3, step: 'Dashboard', roles: ['admin', 'auditor', 'data_entry', 'viewer'] },
+  { to: '/data-entry', label: 'Emission capture', icon: Activity, step: 'Methodology 03', roles: ['admin', 'data_entry'] },
+  { to: '/auditor', label: 'Validation desk', icon: ShieldCheck, step: 'Methodology 09', roles: ['admin', 'auditor'] },
+  { to: '/reports', label: 'Disclosures', icon: FileText, step: 'Methodology 10', roles: ['admin', 'auditor', 'viewer'] },
+  { to: '/emission-factors', label: 'Factor engine', icon: Database, step: 'Methodology 04', roles: ['admin', 'auditor'] },
+  { to: '/audit-log', label: 'Audit history', icon: Shield, step: 'Assurance', roles: ['admin', 'auditor', 'viewer'] },
+  { to: '/settings', label: 'Configuration', icon: Settings, step: 'Boundary', roles: ['admin'] },
 ];
 
 export function AppLayout({ children }: { children: ReactNode }) {
@@ -43,6 +44,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const location = useLocation();
   const { signOut, user } = useAuth();
   const { settings } = useWorkspaceSettings();
+  const { data: role = 'viewer' } = useUserRole();
+
+  const filteredNav = NAV_ITEMS.filter(item => item.roles.includes(role));
 
   useEffect(() => {
     // Show onboarding if organization name is default or boundary is not set
@@ -117,7 +121,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </div>
 
           <nav className="mt-10 space-y-1">
-            {NAV_ITEMS.map((item) => {
+            {filteredNav.map((item) => {
               const active = location.pathname === item.to;
               const Icon = item.icon;
 

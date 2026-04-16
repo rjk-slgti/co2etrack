@@ -94,9 +94,13 @@ export interface IntensityMetrics {
   fte_count: number;
   revenue_usd: number;
   floor_area_sqm: number;
+  student_count: number;
   intensity_revenue: number;
   intensity_fte: number;
   carbon_intensity_area: number;
+  intensity_student: number;
+  building_performance_index?: number;
+  is_optimal?: boolean;
 }
 
 export interface ScopeSummary {
