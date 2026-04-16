@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Roboto", "sans-serif"],
-        heading: ["Poppins", "sans-serif"],
+        sans: ["IBM Plex Sans", "sans-serif"],
+        heading: ["Space Grotesk", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",

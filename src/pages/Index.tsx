@@ -1,440 +1,311 @@
-import { useActivityEntries } from '@/hooks/useActivityEntries';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Link } from 'react-router-dom';
+import {
+  AlertTriangle,
+  ArrowRight,
+  ClipboardCheck,
+  FileText,
+  Leaf,
+  ScanSearch,
+  TrendingUp,
+} from 'lucide-react';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatEmission } from '@/lib/calculation-engine';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { KpiCard } from '@/components/KpiCard';
+import { StatusBadge } from '@/components/StatusBadge';
+import { useAuditWorkspace } from '@/hooks/useAuditWorkspace';
+import { useOrganizationCatalog } from '@/hooks/useOrganizationCatalog';
+import { formatKg } from '@/lib/audit-analytics';
 import { SCOPE_COLORS } from '@/lib/constants';
-import { BarChart3, TrendingUp, Leaf, AlertTriangle, Zap, Car, Factory, ShieldCheck, Timer, Download, ListChecks, Sparkles, FilterX } from 'lucide-react';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { useState, useMemo } from 'react';
 
 export default function Dashboard() {
-  const { data: entries, isLoading } = useActivityEntries();
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const { entries, summary, isLoading } = useAuditWorkspace();
+  const { data: catalog } = useOrganizationCatalog();
+  const activePeriod =
+    catalog?.reportingPeriods.find((period) => period.status === 'active') ?? catalog?.reportingPeriods[0];
 
-  const entriesList = entries ?? [];
-
-  const scopeTotals = entriesList.reduce((acc, e) => {
-    acc[e.scope] = (acc[e.scope] || 0) + (e.emission_kgco2e || 0);
-    return acc;
-  }, {} as Record<string, number>);
-
-  const totalEmissions = Object.values(scopeTotals).reduce((a: number, b: number) => a + b, 0);
-
-  const pieData = Object.entries(scopeTotals).map(([scope, value]) => ({
-    name: scope,
-    value,
-    fill: SCOPE_COLORS[scope] || 'hsl(var(--muted))',
-  }));
-
-  const categoryTotals = entriesList.reduce((acc, e) => {
-    acc[e.category] = (acc[e.category] || 0) + (e.emission_kgco2e || 0);
-    return acc;
-  }, {} as Record<string, number>);
-
-  const barData = Object.entries(categoryTotals)
-    .sort((a, b) => (b[1] as number) - (a[1] as number))
-    .slice(0, 8)
-    .map(([name, value]) => ({ name, value: (value as number) / 1000 }));
-
-  const filteredEntries = useMemo(() => {
-    if (!selectedCategory) return entriesList;
-    return entriesList.filter(e => e.category === selectedCategory);
-  }, [entriesList, selectedCategory]);
-
-  const topCategory = barData.length > 0 ? barData[0].name : "N/A";
-  const highQualityPercent = entriesList.length > 0 
-    ? (entriesList.filter(e => e.data_quality === 'High').length / entriesList.length) * 100 
-    : 0;
-
-  const assumedCount = entriesList.filter(e => e.is_assumed_factor).length;
-  const pendingAuditCount = entriesList.filter(e => e.status === 'pending_audit').length;
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="space-y-4 text-center">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-primary/15 border-t-primary" />
+          <p className="text-sm text-muted-foreground">Preparing your carbon audit command center...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-10 pb-20">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
-        <div>
-          <Badge variant="outline" className="mb-2 bg-primary/5 text-primary border-primary/20 font-black uppercase tracking-[.3em] text-[9px]">
-            Intelligence Dashboard
-          </Badge>
-          <h1 className="text-5xl font-black font-heading text-primary uppercase tracking-tighter transition-all duration-700 hover:tracking-normal cursor-default">Operational Overview</h1>
-          <p className="text-muted-foreground text-lg italic mt-1 font-medium">Sustainability Precision • Audit-Ready Inventory Control</p>
-        </div>
-        <div className="flex gap-3">
-          <div className="flex flex-col items-end mr-2">
-             <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Compliance Status</span>
-             <span className="text-sm font-bold text-primary italic uppercase tracking-tighter">Verified Stream</span>
-          </div>
-          <Badge variant="outline" className="bg-white px-4 py-2 flex items-center gap-2 border-primary/20 shadow-xl rounded-xl">
-            <Timer className="w-4 h-4 text-secondary" />
-            <span className="font-black text-[10px] uppercase tracking-widest">{pendingAuditCount} Reviews Pending</span>
-          </Badge>
-          <Badge variant="outline" className="bg-white px-4 py-2 flex items-center gap-2 border-primary/20 shadow-xl rounded-xl">
-            <ShieldCheck className="w-4 h-4 text-primary" />
-            <span className="font-black text-[10px] uppercase tracking-widest">ISO 14064-1</span>
-          </Badge>
-        </div>
-      </div>
-
-      {/* Narrative Analytics Card */}
-      <Card className="border-none shadow-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-[2rem] overflow-hidden ring-1 ring-primary/10">
-        <CardContent className="p-10 flex flex-col md:flex-row items-center gap-10">
-          <div className="p-6 bg-primary rounded-3xl shadow-2xl shadow-primary/20 shrink-0">
-             <Sparkles className="w-10 h-10 text-white" />
-          </div>
-          <div className="flex-1 space-y-4">
-            <div className="flex items-center gap-3">
-               <Badge className="bg-primary text-white border-none font-black italic text-[9px] uppercase tracking-widest px-3 py-1">Narrative Intelligence</Badge>
-               <span className="text-[10px] font-black text-primary/40 uppercase tracking-[.2em]">Inventory Cycle 2024</span>
-            </div>
-            <h2 className="text-3xl font-black text-primary tracking-tight leading-tight">
-              Strategic Summary: {topCategory} is your primary carbon driver.
-            </h2>
-            <p className="text-muted-foreground text-base font-medium leading-relaxed max-w-3xl italic">
-              Currently, Scope 3 contributes significantly to your footprint. While your data quality is at <span className="text-primary font-black uppercase underline decoration-primary/20 underline-offset-4">{highQualityPercent.toFixed(0)}% high-confidence</span>, focus on source verification for {topCategory} to ensure audit readiness for the upcoming compliance window.
-            </p>
-          </div>
-          <div className="flex flex-col items-end gap-2 border-l border-primary/10 pl-10 hidden md:flex">
-             <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Fidelity Score</span>
-             <span className="text-5xl font-black text-primary tabular-nums tracking-tighter">{highQualityPercent.toFixed(0)}%</span>
-             <span className="text-[9px] font-black text-secondary uppercase tracking-tighter italic">Optimized Path</span>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* KPI Cards */}
-      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="relative overflow-hidden border-none shadow-2xl bg-primary text-white group hover:scale-[1.02] transition-transform duration-500 rounded-3xl">
-          <div className="absolute top-0 right-0 p-6 opacity-20 group-hover:rotate-12 transition-transform duration-700">
-            <Leaf className="h-20 w-20" />
-          </div>
-          <CardHeader className="pb-2 relative z-10">
-            <CardTitle className="text-[10px] font-black uppercase tracking-[.3em] opacity-80">Total Emissions</CardTitle>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="text-5xl font-black tracking-tighter flex items-baseline gap-2">
-               {formatEmission(totalEmissions as number).split(' ')[0]}
-               <span className="text-xl opacity-70 italic">{formatEmission(totalEmissions as number).split(' ')[1]}</span>
-            </div>
-            <p className="text-[9px] mt-4 font-black uppercase tracking-widest opacity-60">Inventory period: 2024 CY</p>
-          </CardContent>
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-white/20" />
-        </Card>
-
-        {[
-          { label: 'Scope 1', color: '#1B5E20', icon: Factory, value: scopeTotals['Scope 1'] },
-          { label: 'Scope 2', color: '#00796B', icon: Zap, value: scopeTotals['Scope 2'] },
-          { label: 'Scope 3', color: '#8BC34A', icon: Car, value: scopeTotals['Scope 3'] },
-        ].map((scope, idx) => (
-          <Card key={idx} className="border-none shadow-xl bg-white hover:shadow-2xl transition-all duration-300 rounded-3xl group overflow-hidden">
-            <div className="h-1 w-full" style={{ backgroundColor: scope.color }} />
-            <CardHeader className="flex flex-row items-center justify-between pb-2 px-6 pt-6">
-              <CardTitle className="text-[10px] font-black text-muted-foreground uppercase tracking-[.2em]">{scope.label}</CardTitle>
-              <scope.icon className="h-5 w-5 group-hover:scale-110 transition-transform" style={{ color: scope.color }} />
-            </CardHeader>
-            <CardContent className="px-6 pb-6 pt-2">
-              <div className="text-3xl font-black tabular-nums tracking-tighter" style={{ color: scope.color }}>
-                {formatEmission(scope.value || 0)}
-              </div>
-              <div className="w-full bg-muted h-1.5 rounded-full mt-5 overflow-hidden ring-1 ring-black/5">
-                 <div className="h-full transition-all duration-1000 ease-out" style={{ backgroundColor: scope.color, width: `${((scope.value as number) / ((totalEmissions as number) || 1)) * 100}%` }} />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {assumedCount > 0 && (
-        <Card className="border-none shadow-xl bg-orange-50/50 border-l-8 border-l-orange-500 rounded-2xl overflow-hidden ring-1 ring-orange-200">
-          <CardContent className="flex items-center gap-6 pt-8 pb-8 px-8">
-            <div className="p-4 bg-orange-100 rounded-2xl shadow-inner">
-              <AlertTriangle className="h-8 w-8 text-orange-600" />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-4 mb-2">
-                <h3 className="font-black text-orange-950 uppercase tracking-tight text-lg">Inventory Integrity Warning</h3>
-                <Badge className="bg-orange-500 text-white border-none px-3 py-1 text-[9px] font-black uppercase tracking-widest italic shadow-lg shadow-orange-500/20">LOW FIDELITY</Badge>
-              </div>
-              <p className="text-sm text-orange-900/70 font-medium">
-                <span className="font-black text-orange-950">{assumedCount} critical entries</span> are currently utilizing proxy emission factors. Precise ISO-standard auditing requires direct source verification to maintain compliance status.
+    <div className="mx-auto max-w-7xl space-y-6">
+      <section className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+        <Card className="overflow-hidden border-border/70 bg-[linear-gradient(135deg,rgba(15,95,75,0.96),rgba(20,108,148,0.9))] text-white shadow-xl">
+          <CardContent className="space-y-6 p-7">
+            <Badge className="border-none bg-white/15 text-white">10-minute guided audit flow</Badge>
+            <div className="space-y-3">
+              <h2 className="max-w-2xl text-4xl font-black tracking-tight">
+                Collect data, verify anomalies, and publish a board-ready carbon report from one workspace.
+              </h2>
+              <p className="max-w-2xl text-white/80">
+                The app now combines activity capture, audit controls, smart anomaly warnings, and one-click report exports
+                for scopes 1, 2, and 3.
               </p>
             </div>
-            <Button className="bg-orange-600 hover:bg-orange-700 text-white font-black uppercase tracking-widest text-[10px] h-12 px-6 rounded-xl shadow-xl shadow-orange-600/20">
-               Resolve Discrepancies
-            </Button>
+            <div className="flex flex-wrap gap-3">
+              <Button asChild size="lg" className="rounded-full bg-white text-slate-950 hover:bg-white/90">
+                <Link to="/data-entry">
+                  Start the audit wizard
+                  <ArrowRight className="ml-1 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="rounded-full border-white/30 bg-transparent text-white hover:bg-white/10">
+                <Link to="/reports">Generate report</Link>
+              </Button>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-white/15 bg-white/10 p-4">
+                <p className="text-xs uppercase tracking-[0.22em] text-white/65">Active period</p>
+                <p className="mt-2 text-lg font-semibold">{activePeriod?.name ?? 'FY2026'}</p>
+              </div>
+              <div className="rounded-2xl border border-white/15 bg-white/10 p-4">
+                <p className="text-xs uppercase tracking-[0.22em] text-white/65">Report readiness</p>
+                <p className="mt-2 text-lg font-semibold">{summary.verifiedShare}% verified</p>
+              </div>
+              <div className="rounded-2xl border border-white/15 bg-white/10 p-4">
+                <p className="text-xs uppercase tracking-[0.22em] text-white/65">Smart alerts</p>
+                <p className="mt-2 text-lg font-semibold">{summary.signals.length} open insights</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
-      )}
 
-      {/* Analytics Group */}
-      <div className="grid gap-10 lg:grid-cols-12">
-        <Card className="lg:col-span-4 shadow-2xl border-none bg-white rounded-3xl overflow-hidden ring-1 ring-black/5">
-          <CardHeader className="bg-muted/30 border-b border-muted/50 px-8 py-6">
-            <CardTitle className="text-xs font-black uppercase text-primary tracking-[.2em] flex items-center gap-3">
-              <BarChart3 className="h-5 w-5 opacity-70" /> Structural Composition
+        <Card className="border-border/70 bg-card/80 shadow-sm backdrop-blur">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <ScanSearch className="h-5 w-5 text-primary" />
+              Audit readiness
             </CardTitle>
+            <CardDescription>Critical items to clear before report sign-off.</CardDescription>
           </CardHeader>
-          <CardContent className="pt-10 px-8 pb-10 flex flex-col items-center">
-            {pieData.length > 0 ? (
-              <>
-              <div className="h-[260px] w-full relative">
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                   <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Total</span>
-                   <span className="text-2xl font-black text-primary">100%</span>
-                </div>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie 
-                      data={pieData} 
-                      dataKey="value" 
-                      nameKey="name" 
-                      cx="50%" 
-                      cy="50%" 
-                      innerRadius={75}
-                      outerRadius={100} 
-                      paddingAngle={8}
-                    >
-                      {pieData.map((entry, i) => <Cell key={i} fill={entry.fill} stroke="rgba(255,255,255,0.1)" strokeWidth={2} />)}
-                    </Pie>
-                    <Tooltip 
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          return (
-                            <div className="bg-white p-4 shadow-3xl border border-primary/10 rounded-2xl ring-1 ring-primary/5">
-                              <p className="text-[10px] font-black text-primary uppercase tracking-[.2em] mb-1">{payload[0].name}</p>
-                              <p className="text-2xl font-black text-primary tabular-nums tracking-tighter">
-                                {((Number(payload[0].value) / (totalEmissions as number)) * 100).toFixed(1)}%
-                              </p>
-                              <p className="text-[9px] font-bold text-muted-foreground uppercase mt-1">
-                                {formatEmission(Number(payload[0].value))}
-                              </p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+          <CardContent className="space-y-4">
+            {summary.signals.length === 0 ? (
+              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-700 dark:text-emerald-300">
+                No major warnings are open. The workspace is ready for the next report pack.
               </div>
-              <div className="grid grid-cols-2 gap-x-8 gap-y-4 mt-8 w-full">
-                {pieData.map((d, i) => (
-                  <div key={i} className="flex items-center justify-between border-b border-muted/20 pb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.fill }} />
-                      <span className="text-[10px] font-black text-muted-foreground uppercase">{d.name}</span>
+            ) : (
+              summary.signals.slice(0, 3).map((signal) => (
+                <div key={signal.id} className="rounded-2xl border border-border/70 bg-background/80 p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-full bg-amber-500/15 p-2 text-amber-600">
+                      <AlertTriangle className="h-4 w-4" />
                     </div>
-                    <span className="font-black text-primary text-xs">{(totalEmissions as number) > 0 ? (((d.value as number)/((totalEmissions as number)))*100).toFixed(0) : 0}%</span>
+                    <div className="space-y-1">
+                      <p className="font-semibold text-foreground">{signal.title}</p>
+                      <p className="text-sm text-muted-foreground">{signal.detail}</p>
+                    </div>
                   </div>
-                ))}
-              </div>
-              </>
-            ) : (
-              <div className="flex h-64 items-center justify-center text-muted-foreground text-xs italic font-medium uppercase tracking-[.2em] opacity-40">No Structural Data</div>
+                </div>
+              ))
             )}
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-8 shadow-2xl border-none bg-white rounded-3xl overflow-hidden ring-1 ring-black/5">
-          <CardHeader className="bg-muted/30 border-b border-muted/50 px-8 py-6 flex flex-row items-center justify-between">
-            <CardTitle className="text-xs font-black uppercase text-primary tracking-[.2em] flex items-center gap-3">
-              <TrendingUp className="h-5 w-5 opacity-70" /> Strategic Hotspots
-            </CardTitle>
-            <div className="flex items-center gap-3">
-              {selectedCategory && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setSelectedCategory(null)}
-                  className="h-7 px-2 text-[9px] font-black uppercase tracking-widest text-primary/50 hover:text-primary transition-colors flex items-center gap-1.5"
-                >
-                  <FilterX className="w-3 h-3" /> Clear Drill-down
-                </Button>
-              )}
-              <Badge className="bg-primary/5 text-primary border-primary/20 font-black italic text-[9px] uppercase tracking-widest px-3 py-1 italic">Top Tonnes (tCO2e)</Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="p-10">
-            {barData.length > 0 ? (
-              <div className="h-[360px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart 
-                    data={barData} 
-                    layout="vertical" 
-                    margin={{ left: 20 }}
-                    onClick={(data) => {
-                      if (data && data.activePayload && data.activePayload.length) {
-                        setSelectedCategory(data.activePayload[0].payload.name);
-                      }
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="4 4" horizontal={true} vertical={false} stroke="hsl(var(--muted))" opacity={0.3} />
-                    <XAxis type="number" hide />
-                    <YAxis 
-                      type="category" 
-                      dataKey="name" 
-                      fontSize={10} 
-                      width={120}
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{fill: 'currentColor', fontWeight: 900}}
-                      className="cursor-pointer"
-                    />
-                    <Tooltip 
-                      cursor={{fill: 'hsl(var(--primary))', opacity: 0.05}} 
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          return (
-                            <div className="bg-white p-4 shadow-3xl border border-primary/10 rounded-2xl ring-1 ring-primary/5">
-                              <div className="flex items-center justify-between gap-4 mb-2">
-                                <p className="text-[10px] font-black text-primary uppercase tracking-[.2em]">{payload[0].payload.name}</p>
-                                <span className="text-[9px] font-black text-secondary italic uppercase tracking-tighter">Click to Drill-down</span>
-                              </div>
-                              <p className="text-3xl font-black text-primary tabular-nums tracking-tighter">{Number(payload[0].value)?.toFixed(2)} <span className="text-sm opacity-40 font-bold">tco2e</span></p>
-                              <div className="w-full bg-muted h-1 rounded-full mt-3 overflow-hidden">
-                                 <div className="h-full bg-primary transition-all duration-700" style={{ width: `${(Number(payload[0].value) / barData[0].value) * 100}%` }} />
-                              </div>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Bar 
-                      dataKey="value" 
-                      radius={[0, 8, 8, 0]} 
-                      barSize={24}
-                      className="cursor-pointer transition-all duration-300"
-                    >
-                      {barData.map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={selectedCategory === entry.name ? 'hsl(var(--primary))' : 'hsl(var(--primary) / 0.4)'} 
-                          className="hover:fill-primary transition-all"
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="flex h-[360px] items-center justify-center text-muted-foreground text-[10px] italic font-black uppercase tracking-[.2em] opacity-40">Awaiting Hotspot Analysis</div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Audit Readiness Log */}
-      <Card className="shadow-2xl border-none bg-white rounded-3xl overflow-hidden ring-1 ring-black/5" id="inventory-registry">
-        <CardHeader className="bg-muted/30 border-b border-muted/50 px-8 py-8">
-          <div className="flex justify-between items-center">
-            <div className="space-y-1">
-              <div className="flex items-center gap-3">
-                <CardTitle className="text-xl font-black font-heading text-primary uppercase tracking-tight">Direct Inventory Registry</CardTitle>
-                {selectedCategory && (
-                  <Badge className="bg-primary/5 text-primary border-primary/20 font-black italic text-[9px] uppercase tracking-widest px-3 py-1 italic flex items-center gap-2">
-                    Filtered: {selectedCategory}
-                    <FilterX className="w-3 h-3 cursor-pointer hover:text-red-500" onClick={() => setSelectedCategory(null)} />
-                  </Badge>
-                )}
-              </div>
-              <CardDescription className="text-[10px] font-black uppercase text-muted-foreground tracking-widest italic opacity-60">High-fidelity audit records for reconciliation</CardDescription>
-            </div>
-            <Button className="bg-primary hover:bg-primary/95 text-white font-black uppercase tracking-widest text-[10px] h-12 px-6 rounded-xl shadow-xl shadow-primary/20 flex items-center gap-2">
-              <Download className="w-4 h-4" /> Export Verification Pack
+            <Button asChild variant="outline" className="w-full rounded-full">
+              <Link to="/auditor">Open audit center</Link>
             </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="p-20 flex flex-col items-center justify-center gap-4 text-muted-foreground">
-               <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
-               <span className="text-[10px] font-black uppercase tracking-widest">Synchronizing Ledger...</span>
-            </div>
-          ) : filteredEntries.length === 0 ? (
-            <div className="p-20 text-center flex flex-col items-center gap-4">
-               <div className="p-4 bg-muted/20 rounded-full text-muted-foreground/30"><ListChecks className="w-12 h-12" /></div>
-               <p className="text-muted-foreground font-black uppercase tracking-widest text-[11px] italic opacity-40">Clean Audit Slate: No Records {selectedCategory ? `for ${selectedCategory}` : ''}</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-muted/10 text-muted-foreground border-b border-muted/30">
-                    <th className="px-8 py-5 font-black text-[9px] uppercase tracking-[.2em] text-left">Status</th>
-                    <th className="px-8 py-5 font-black text-[9px] uppercase tracking-[.2em] text-left">Internal Chain</th>
-                    <th className="px-8 py-5 font-black text-[9px] uppercase tracking-[.2em] text-left">Categorization</th>
-                    <th className="px-8 py-5 font-black text-[9px] uppercase tracking-[.2em] text-right">Qty / Input</th>
-                    <th className="px-8 py-5 font-black text-[9px] uppercase tracking-[.2em] text-right">GHG Footprint</th>
-                    <th className="px-8 py-5 font-black text-[9px] uppercase tracking-[.2em] text-center">Quality</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-muted/10">
-                  {filteredEntries.slice(0, 10).map(e => (
-                    <tr key={e.id} className="group hover:bg-primary/5 transition-all duration-300">
-                      <td className="px-8 py-6">
-                        {e.status === 'verified' ? (
-                          <Badge className="bg-white text-primary border border-primary/20 shadow-sm font-black italic text-[9px] uppercase tracking-widest px-3 py-1">Verified</Badge>
-                        ) : e.status === 'pending_audit' ? (
-                          <Badge className="bg-secondary/10 text-secondary border border-secondary/20 font-black italic text-[9px] uppercase tracking-widest px-3 py-1 shadow-sm">Audit Queue</Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-[9px] font-black uppercase tracking-widest italic text-muted-foreground border-muted/50 px-3 py-1">Local Draft</Badge>
-                        )}
-                      </td>
-                      <td className="px-8 py-6">
-                         <div className="flex flex-col">
-                            <span className="font-black text-primary italic uppercase tracking-tighter text-sm underline underline-offset-4 decoration-primary/20">{e.scope}</span>
-                            <span className="text-[9px] font-black text-muted-foreground opacity-40 uppercase tracking-widest mt-1">Tier 1 Stream</span>
-                         </div>
-                      </td>
-                      <td className="px-8 py-6">
-                        <div className="flex flex-col">
-                          <span className="font-black text-primary/80 uppercase tracking-tight text-xs">{e.category}</span>
-                          <span className="text-[10px] text-muted-foreground font-black italic mt-0.5 truncate max-w-[180px]">
-                            {e.activity_type}
-                            {e.is_assumed_factor && <span className="text-orange-600 font-black ml-1">[PROXY APPLIED]</span>}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-8 py-6 text-right font-black text-muted-foreground tabular-nums opacity-60">
-                        {e.quantity.toLocaleString()} <span className="text-[9px] uppercase">{e.unit}</span>
-                      </td>
-                      <td className="px-8 py-6 text-right font-black text-primary text-base tabular-nums tracking-tighter">
-                        {formatEmission(e.emission_kgco2e || 0)}
-                      </td>
-                      <td className="px-8 py-6 flex justify-center">
-                        <div className="flex flex-col items-center gap-1.5 bg-muted/20 px-4 py-1.5 rounded-xl border border-muted/50">
-                           <div className={cn(
-                             "w-2.5 h-2.5 rounded-full shadow-inner",
-                             e.data_quality === 'High' ? "bg-primary" : e.data_quality === 'Medium' ? "bg-secondary" : "bg-orange-500"
-                           )} />
-                           <span className="text-[8px] font-black uppercase tracking-widest opacity-60">{e.data_quality} Confidence</span>
-                        </div>
-                      </td>
-                    </tr>
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <KpiCard
+          label="Total footprint"
+          value={formatKg(summary.totalKg)}
+          helper="Combined emissions for the active reporting period"
+          icon={<Leaf className="h-5 w-5" />}
+        />
+        <KpiCard
+          label="Verified coverage"
+          value={`${summary.verifiedShare}%`}
+          helper="Entries already reviewed and cleared"
+          icon={<ClipboardCheck className="h-5 w-5" />}
+        />
+        <KpiCard
+          label="Evidence coverage"
+          value={`${summary.evidenceCoverage}%`}
+          helper="Entries with attached invoices, bills, or evidence"
+          icon={<FileText className="h-5 w-5" />}
+        />
+        <KpiCard
+          label="Next-month forecast"
+          value={formatKg(summary.forecast.nextPeriodKg)}
+          helper={`${summary.forecast.trendPercent}% versus latest actual month`}
+          icon={<TrendingUp className="h-5 w-5" />}
+        />
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[1.25fr_1fr]">
+        <Card className="border-border/70 bg-card/80 shadow-sm">
+          <CardHeader>
+            <CardTitle>Emissions trend and forecast</CardTitle>
+            <CardDescription>Monthly actuals with a forward-looking forecast for the next reporting cycle.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[320px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={summary.monthlyTrend}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.18)" />
+                <XAxis dataKey="label" stroke="currentColor" fontSize={12} />
+                <YAxis stroke="currentColor" fontSize={12} />
+                <Tooltip />
+                <Line type="monotone" dataKey="actualKg" stroke="#0f5f4b" strokeWidth={3} dot={{ r: 4 }} />
+                <Line type="monotone" dataKey="forecastKg" stroke="#146c94" strokeWidth={3} strokeDasharray="6 4" dot={{ r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 bg-card/80 shadow-sm">
+          <CardHeader>
+            <CardTitle>Top drivers</CardTitle>
+            <CardDescription>Largest footprint contributors across all scopes.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[320px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={summary.topDrivers}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.18)" />
+                <XAxis dataKey="label" stroke="currentColor" fontSize={12} />
+                <YAxis stroke="currentColor" fontSize={12} />
+                <Tooltip />
+                <Bar dataKey="totalKg" radius={[8, 8, 0, 0]}>
+                  {summary.topDrivers.map((driver) => (
+                    <Cell key={`${driver.label}-${driver.scope}`} fill={SCOPE_COLORS[driver.scope] ?? '#0f5f4b'} />
                   ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      
-      <div className="flex items-center justify-between p-8 bg-black/5 rounded-[2.5rem] border border-black/5 shadow-inner">
-         <div className="flex items-center gap-6">
-            <div className="p-4 bg-white/50 rounded-2xl shadow-xl"><ShieldCheck className="w-8 h-8 text-primary" /></div>
-            <div>
-               <p className="text-sm font-black text-primary uppercase tracking-[.2em] mb-1">Authenticated Assurance Stream</p>
-               <p className="text-[11px] text-muted-foreground font-medium italic max-w-xl leading-relaxed">System metrics are recalculated in real-time. All data presented in this dashboard is subject to the Maker-Checker workflow prior to formal sustainability disclosure.</p>
-            </div>
-         </div>
-         <Button variant="ghost" className="font-black text-[10px] uppercase tracking-[.4em] text-primary/40 hover:text-primary transition-colors">
-            System Diagnostics 
-         </Button>
-      </div>
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-3">
+        <Card className="border-border/70 bg-card/80 shadow-sm lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Recent activity</CardTitle>
+            <CardDescription>Newest entries in the audit workspace with workflow status and evidence coverage.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {entries.slice(0, 6).map((entry) => (
+              <div
+                key={entry.id}
+                className="grid gap-3 rounded-2xl border border-border/70 bg-background/80 p-4 md:grid-cols-[1fr_auto_auto]"
+              >
+                <div>
+                  <p className="font-semibold text-foreground">{entry.activity_type}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {entry.scope} | {entry.category} | {entry.quantity.toLocaleString()} {entry.unit}
+                  </p>
+                </div>
+                <div className="text-sm font-medium text-foreground">{formatKg(entry.emission_kgco2e)}</div>
+                <div className="flex items-center justify-end gap-2">
+                  <StatusBadge status={entry.status ?? 'draft'} />
+                  <Badge variant="outline" className="capitalize">
+                    {(entry.activity_evidence?.length ?? 0) > 0 ? 'Evidence attached' : 'Needs evidence'}
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 bg-card/80 shadow-sm">
+          <CardHeader>
+            <CardTitle>Compliance pulse</CardTitle>
+            <CardDescription>How the current workspace is tracking against core disclosure expectations.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {summary.checklist.map((item) => (
+              <div key={item.id} className="rounded-2xl border border-border/70 bg-background/80 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-semibold text-foreground">{item.requirement}</p>
+                  <Badge
+                    variant="outline"
+                    className={
+                      item.status === 'pass'
+                        ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                        : item.status === 'warning'
+                          ? 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                          : 'border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-300'
+                    }
+                  >
+                    {item.status}
+                  </Badge>
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">{item.detail}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-2">
+        <Card className="border-border/70 bg-card/80 shadow-sm">
+          <CardHeader>
+            <CardTitle>Reduction opportunities</CardTitle>
+            <CardDescription>Suggested actions derived from top drivers and current data quality signals.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {summary.reductionOpportunities.map((opportunity) => (
+              <div key={opportunity.id} className="rounded-2xl border border-border/70 bg-background/80 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-semibold text-foreground">{opportunity.title}</p>
+                  <Badge variant="outline" className="capitalize">
+                    {opportunity.priority} priority
+                  </Badge>
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">{opportunity.description}</p>
+                <p className="mt-3 text-sm font-medium text-foreground">
+                  Estimated reduction: {formatKg(opportunity.estimatedReductionKg)}
+                </p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 bg-card/80 shadow-sm">
+          <CardHeader>
+            <CardTitle>Scope breakdown</CardTitle>
+            <CardDescription>A quick view of how the footprint is distributed across scopes 1, 2, and 3.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {summary.scopeSummary.map((scope) => (
+              <div key={scope.scope} className="space-y-2 rounded-2xl border border-border/70 bg-background/80 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-semibold text-foreground">{scope.scope}</p>
+                  <p className="text-sm text-muted-foreground">{scope.share}% of total</p>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${scope.share}%`,
+                      backgroundColor: SCOPE_COLORS[scope.scope],
+                    }}
+                  />
+                </div>
+                <p className="text-sm font-medium text-foreground">{formatKg(scope.totalKg)}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </section>
     </div>
   );
 }
-
-const cn = (...classes: string[]) => classes.filter(Boolean).join(' ');

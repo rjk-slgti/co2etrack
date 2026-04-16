@@ -33,34 +33,95 @@ export interface CalculationResult {
   converted_unit: string;
   is_assumed_factor: boolean;
   factor_used: EmissionFactor;
+  confidence_score: number;
 }
 
-const UNIT_CONVERSIONS: Record<string, Record<string, number>> = {
-  'gallon': { 'L': 3.78541 },
-  'gal': { 'L': 3.78541 },
-  'mile': { 'km': 1.60934 },
-  'mi': { 'km': 1.60934 },
-  'MWh': { 'kWh': 1000 },
-  'GJ': { 'kWh': 277.778 },
-  'tonne': { 'kg': 1000 },
-  't': { 'kg': 1000 },
-  'lb': { 'kg': 0.453592 },
-  'ft3': { 'm3': 0.0283168 },
-  'yd3': { 'm3': 0.764555 },
-  'L': { 'L': 1 },
-  'kWh': { 'kWh': 1 },
-  'km': { 'km': 1 },
-  'kg': { 'kg': 1 },
-  'm3': { 'm3': 1 },
+export interface ActivityDraftForInsight {
+  category: string;
+  activity_type: string;
+  quantity: number;
+  unit: string;
+}
+
+const UNIT_ALIASES: Record<string, string> = {
+  l: 'litre',
+  litre: 'litre',
+  litres: 'litre',
+  liter: 'litre',
+  liters: 'litre',
+  gal: 'gallon',
+  gallon: 'gallon',
+  gallons: 'gallon',
+  kwh: 'kWh',
+  mwh: 'MWh',
+  gj: 'GJ',
+  km: 'km',
+  mi: 'mile',
+  mile: 'mile',
+  miles: 'mile',
+  kg: 'kg',
+  tonne: 'tonne',
+  tonnes: 'tonne',
+  passenger_km: 'passenger_km',
+  tonne_km: 'tonne_km',
+  ft3: 'ft3',
+  yd3: 'yd3',
+  m3: 'm3',
 };
 
-export function convertToStandardUnit(value: number, fromUnit: string, toUnit: string): { value: number; unit: string } | null {
-  if (fromUnit === toUnit) return { value, unit: toUnit };
-  const conversion = UNIT_CONVERSIONS[fromUnit];
-  if (conversion && conversion[toUnit] !== undefined) {
-    return { value: value * conversion[toUnit], unit: toUnit };
+const UNIT_CONVERSIONS: Record<string, Record<string, number>> = {
+  gallon: { litre: 3.78541 },
+  litre: { litre: 1 },
+  mile: { km: 1.60934 },
+  km: { km: 1 },
+  MWh: { kWh: 1000 },
+  GJ: { kWh: 277.778 },
+  tonne: { kg: 1000 },
+  kg: { kg: 1 },
+  passenger_km: { passenger_km: 1 },
+  tonne_km: { tonne_km: 1 },
+  ft3: { m3: 0.0283168 },
+  yd3: { m3: 0.764555 },
+  m3: { m3: 1 },
+};
+
+function round(value: number, digits = 6) {
+  const multiplier = 10 ** digits;
+  return Math.round(value * multiplier) / multiplier;
+}
+
+export function normalizeUnit(unit: string) {
+  const cleaned = unit.trim();
+  const normalized = UNIT_ALIASES[cleaned.toLowerCase()];
+  return normalized ?? cleaned;
+}
+
+export function convertToStandardUnit(value: number, fromUnit: string, toUnit: string) {
+  const normalizedFrom = normalizeUnit(fromUnit);
+  const normalizedTo = normalizeUnit(toUnit);
+
+  if (normalizedFrom === normalizedTo) {
+    return { value, unit: normalizedTo };
   }
+
+  const conversion = UNIT_CONVERSIONS[normalizedFrom];
+  if (conversion && conversion[normalizedTo] !== undefined) {
+    return {
+      value: round(value * conversion[normalizedTo], 6),
+      unit: normalizedTo,
+    };
+  }
+
   return null;
+}
+
+function factorConfidenceScore(factor: EmissionFactor, isAssumed: boolean) {
+  const qualityScore =
+    factor.data_quality === 'High' ? 95 : factor.data_quality === 'Medium' ? 80 : 60;
+  const uncertaintyPenalty = factor.uncertainty_percent ? Math.min(factor.uncertainty_percent / 2, 20) : 0;
+  const assumptionPenalty = isAssumed ? 15 : 0;
+
+  return Math.max(30, round(qualityScore - uncertaintyPenalty - assumptionPenalty, 0));
 }
 
 export function selectBestFactor(
@@ -69,40 +130,41 @@ export function selectBestFactor(
 ): { factor: EmissionFactor; isAssumed: boolean } | null {
   if (factors.length === 0) return null;
 
-  const sorted = [...factors].sort((a, b) => {
-    const aIsCountry = a.header.region === userCountry;
-    const bIsCountry = b.header.region === userCountry;
-    if (aIsCountry && !bIsCountry) return -1;
-    if (!aIsCountry && bIsCountry) return 1;
+  const sorted = [...factors].sort((left, right) => {
+    const leftCountryMatch = left.header.region === userCountry;
+    const rightCountryMatch = right.header.region === userCountry;
+    if (leftCountryMatch && !rightCountryMatch) return -1;
+    if (!leftCountryMatch && rightCountryMatch) return 1;
 
-    const aPriority = FACTOR_SOURCE_PRIORITY[a.header.source] ?? 99;
-    const bPriority = FACTOR_SOURCE_PRIORITY[b.header.source] ?? 99;
-    return aPriority - bPriority;
+    const leftPriority = FACTOR_SOURCE_PRIORITY[left.header.source] ?? 99;
+    const rightPriority = FACTOR_SOURCE_PRIORITY[right.header.source] ?? 99;
+    if (leftPriority !== rightPriority) {
+      return leftPriority - rightPriority;
+    }
+
+    if (left.data_quality !== right.data_quality) {
+      const order = { High: 0, Medium: 1, Low: 2 };
+      return (order[left.data_quality as keyof typeof order] ?? 3) - (order[right.data_quality as keyof typeof order] ?? 3);
+    }
+
+    return left.header.activity_type.localeCompare(right.header.activity_type);
   });
 
-  const best = sorted[0];
-  const isAssumed = best.header.region !== userCountry && best.header.source !== 'Country';
+  const factor = sorted[0];
+  const isAssumed = factor.header.region !== userCountry && factor.header.source !== 'Country';
 
-  return { factor: best, isAssumed };
+  return { factor, isAssumed };
 }
 
-export function calculateEmission(
-  quantity: number,
-  unit: string,
-  factor: EmissionFactor
-): CalculationResult | null {
+export function calculateEmission(quantity: number, unit: string, factor: EmissionFactor): CalculationResult | null {
   const converted = convertToStandardUnit(quantity, unit, factor.unit_standard);
   if (!converted) return null;
 
-  const emission_kgco2e = converted.value * factor.emission_factor;
-
-  let emission_co2: number | null = null;
-  let emission_ch4: number | null = null;
-  let emission_n2o: number | null = null;
-
-  if (factor.co2_fraction != null) emission_co2 = emission_kgco2e * factor.co2_fraction;
-  if (factor.ch4_fraction != null) emission_ch4 = emission_kgco2e * factor.ch4_fraction;
-  if (factor.n2o_fraction != null) emission_n2o = emission_kgco2e * factor.n2o_fraction;
+  const emission_kgco2e = round(converted.value * factor.emission_factor, 6);
+  const emission_co2 = factor.co2_fraction != null ? round(emission_kgco2e * factor.co2_fraction, 6) : null;
+  const emission_ch4 = factor.ch4_fraction != null ? round(emission_kgco2e * factor.ch4_fraction, 6) : null;
+  const emission_n2o = factor.n2o_fraction != null ? round(emission_kgco2e * factor.n2o_fraction, 6) : null;
+  const confidence_score = factorConfidenceScore(factor, false);
 
   return {
     emission_kgco2e,
@@ -113,11 +175,74 @@ export function calculateEmission(
     converted_unit: converted.unit,
     is_assumed_factor: false,
     factor_used: factor,
+    confidence_score,
   };
 }
 
-export function formatEmission(kgco2e: number): string {
-  if (kgco2e >= 1_000_000) return `${(kgco2e / 1_000_000).toFixed(1)} ktCO₂e`;
-  if (kgco2e >= 1_000) return `${(kgco2e / 1_000).toFixed(1)} tCO₂e`;
-  return `${kgco2e.toFixed(2)} kgCO₂e`;
+export function calculateCustomFactorEmission(
+  quantity: number,
+  unit: string,
+  customFactor: number,
+  factorUnit: string,
+  templateFactor: EmissionFactor
+): CalculationResult | null {
+  const converted = convertToStandardUnit(quantity, unit, factorUnit);
+  if (!converted) return null;
+
+  const emission_kgco2e = round(converted.value * customFactor, 6);
+
+  return {
+    emission_kgco2e,
+    emission_co2: emission_kgco2e,
+    emission_ch4: null,
+    emission_n2o: null,
+    converted_quantity: converted.value,
+    converted_unit: factorUnit,
+    is_assumed_factor: false,
+    factor_used: {
+      ...templateFactor,
+      emission_factor: customFactor,
+      unit_standard: factorUnit,
+      unit_input: factorUnit,
+      data_quality: 'Medium',
+      header: {
+        ...templateFactor.header,
+        source: 'Other',
+      },
+    },
+    confidence_score: 70,
+  };
+}
+
+export function createRealtimeVarianceInsight(
+  draft: ActivityDraftForInsight,
+  historicalEntries: Array<{ category: string; activity_type: string; quantity: number }>
+) {
+  const comparableEntries = historicalEntries.filter(
+    (entry) => entry.category === draft.category && entry.activity_type === draft.activity_type
+  );
+
+  if (comparableEntries.length < 2) return null;
+
+  const baseline =
+    comparableEntries.reduce((sum, entry) => sum + entry.quantity, 0) / comparableEntries.length;
+  if (baseline === 0) return null;
+
+  const variance = ((draft.quantity - baseline) / baseline) * 100;
+  if (Math.abs(variance) < 15) return null;
+
+  return {
+    baseline,
+    variancePercent: round(variance, 0),
+    message:
+      variance > 0
+        ? `This activity is ${round(variance, 0)}% above the recent average. Double-check units, invoices, or meter references.`
+        : `This activity is ${Math.abs(round(variance, 0))}% below the recent average. Confirm that the reporting period and source document are correct.`,
+  };
+}
+
+export function formatEmission(kgco2e: number) {
+  if (kgco2e >= 1_000_000) return `${round(kgco2e / 1_000_000, 1)} ktCO2e`;
+  if (kgco2e >= 1_000) return `${round(kgco2e / 1_000, 1)} tCO2e`;
+  return `${round(kgco2e, 2)} kgCO2e`;
 }

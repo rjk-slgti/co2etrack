@@ -1,387 +1,912 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { type ReactNode, useMemo, useState } from 'react';
+import {
+  AlertTriangle,
+  BrainCircuit,
+  CheckCircle2,
+  FileUp,
+  Save,
+  Sparkles,
+  Wand2,
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useActivityEntries, useCreateActivityEntry } from '@/hooks/useActivityEntries';
+import { useCustomFactors, useCreateCustomFactor } from '@/hooks/useCustomFactors';
 import { useEmissionFactorHeaders, useFactorsForActivity } from '@/hooks/useEmissionFactors';
-import { useCreateActivityEntry } from '@/hooks/useActivityEntries';
-import { selectBestFactor, calculateEmission, formatEmission } from '@/lib/calculation-engine';
-import { SCOPE_CATEGORIES, EMISSION_CATEGORIES, DATA_QUALITY_OPTIONS } from '@/lib/constants';
 import { useEvidenceUpload } from '@/hooks/useEvidenceUpload';
-import { AlertTriangle, Check, Search, Upload, FileText, Database, Shield, Info, Leaf } from 'lucide-react';
+import { useLocalStorageState } from '@/hooks/useLocalStorageState';
+import { useOrganizationCatalog } from '@/hooks/useOrganizationCatalog';
+import { useWorkspaceSettings } from '@/hooks/useWorkspaceSettings';
+import {
+  calculateCustomFactorEmission,
+  calculateEmission,
+  createRealtimeVarianceInsight,
+  formatEmission,
+  normalizeUnit,
+  selectBestFactor,
+} from '@/lib/calculation-engine';
+import { DATA_QUALITY_OPTIONS, EMISSION_CATEGORIES, GWP_SETS, SCOPE_CATEGORIES } from '@/lib/constants';
+import { DEMO_ORGANIZATION_ID, DEMO_REPORTING_PERIOD_ID } from '@/lib/workspace-settings';
 
-const DEMO_ORG_ID = '00000000-0000-0000-0000-000000000001';
+type WizardDraft = {
+  organization_id: string;
+  reporting_period_id: string;
+  entry_date: string;
+  scope: string;
+  scope_category: string;
+  category: string;
+  activity_type: string;
+  quantity: string;
+  unit: string;
+  site_name: string;
+  supplier_name: string;
+  data_quality: string;
+  notes: string;
+  source_document_ref: string;
+  use_custom_factor: boolean;
+  save_custom_factor: boolean;
+  custom_factor_value: string;
+  custom_factor_unit: string;
+  custom_factor_source: string;
+  gwp_set: string;
+};
+
+const DEFAULT_DRAFT: WizardDraft = {
+  organization_id: DEMO_ORGANIZATION_ID,
+  reporting_period_id: DEMO_REPORTING_PERIOD_ID,
+  entry_date: new Date().toISOString().slice(0, 10),
+  scope: 'Scope 2',
+  scope_category: 'S2.1',
+  category: 'Electricity',
+  activity_type: 'Grid electricity',
+  quantity: '',
+  unit: 'kWh',
+  site_name: '',
+  supplier_name: '',
+  data_quality: 'Medium',
+  notes: '',
+  source_document_ref: '',
+  use_custom_factor: false,
+  save_custom_factor: false,
+  custom_factor_value: '',
+  custom_factor_unit: 'kWh',
+  custom_factor_source: '',
+  gwp_set: 'AR6',
+};
 
 export default function DataEntry() {
   const { toast } = useToast();
+  const { settings, updateSettings } = useWorkspaceSettings();
+  const { data: catalog } = useOrganizationCatalog();
+  const { data: historicalEntries } = useActivityEntries(settings.selectedOrganizationId);
   const createEntry = useCreateActivityEntry();
   const uploadEvidence = useEvidenceUpload();
+  const createCustomFactor = useCreateCustomFactor();
+  const { data: customFactors } = useCustomFactors(settings.selectedOrganizationId);
 
-  const [scope, setScope] = useState<string>('');
-  const [scopeCategory, setScopeCategory] = useState<string>('');
-  const [category, setCategory] = useState<string>('');
-  const [activityType, setActivityType] = useState<string>('');
-  const [quantity, setQuantity] = useState<string>('');
-  const [unit, setUnit] = useState<string>('');
-  const [dataQuality, setDataQuality] = useState<string>('Medium');
-  const [notes, setNotes] = useState('');
+  const [draft, setDraft] = useLocalStorageState<WizardDraft>('co2etrack-audit-draft', {
+    ...DEFAULT_DRAFT,
+    organization_id: settings.selectedOrganizationId,
+    reporting_period_id: settings.selectedReportingPeriodId,
+  });
   const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
-  const [submitStatus, setSubmitStatus] = useState<'draft' | 'pending_audit'>('draft');
+  const [isDragging, setIsDragging] = useState(false);
 
-  const { data: headers } = useEmissionFactorHeaders(category || undefined);
-  const { data: factorValues } = useFactorsForActivity(category, activityType);
+  const headersForCategory = useEmissionFactorHeaders(draft.category).data ?? [];
+  const factorValues = useFactorsForActivity(draft.category, draft.activity_type).data ?? [];
+  const selectedHeaders = useEmissionFactorHeaders().data ?? [];
+  const activityOptions = [...new Set(headersForCategory.map((header: any) => header.activity_type))];
 
-  const activityTypes = [...new Set((headers ?? []).map(h => h.activity_type))];
+  const factors = useMemo(
+    () =>
+      factorValues.map((value: any) => ({
+        id: value.id,
+        factor_id: value.factor_id,
+        emission_factor: Number(value.emission_factor),
+        unit_input: value.unit_input,
+        unit_standard: value.unit_standard,
+        emission_type: value.emission_type,
+        gwp_set: value.gwp_set,
+        co2_fraction: value.co2_fraction ?? null,
+        ch4_fraction: value.ch4_fraction ?? null,
+        n2o_fraction: value.n2o_fraction ?? null,
+        uncertainty_percent: value.uncertainty_percent ?? null,
+        data_quality: value.data_quality ?? 'Medium',
+        header: value.emission_factor_headers,
+      })),
+    [factorValues]
+  );
 
-  // Determine best factor
-  const factors = (factorValues ?? []).map((fv: any) => ({
-    id: fv.id,
-    factor_id: fv.factor_id,
-    emission_factor: fv.emission_factor,
-    unit_input: fv.unit_input,
-    unit_standard: fv.unit_standard,
-    emission_type: fv.emission_type,
-    gwp_set: fv.gwp_set,
-    co2_fraction: fv.co2_fraction,
-    ch4_fraction: fv.ch4_fraction,
-    n2o_fraction: fv.n2o_fraction,
-    uncertainty_percent: fv.uncertainty_percent,
-    data_quality: fv.data_quality,
-    header: fv.emission_factor_headers,
-  }));
+  const bestFactor = useMemo(
+    () => selectBestFactor(factors, settings.organizationCountry),
+    [factors, settings.organizationCountry]
+  );
 
-  const bestFactor = factors.length > 0 ? selectBestFactor(factors, 'LK') : null;
-  const availableUnits = bestFactor ? [bestFactor.factor.unit_input, bestFactor.factor.unit_standard] : [];
+  const quantityValue = Number(draft.quantity);
+  const baseTemplateFactor =
+    bestFactor?.factor ??
+    ({
+      id: 'custom-preview',
+      factor_id: 'custom-preview',
+      emission_factor: 0,
+      unit_input: draft.custom_factor_unit,
+      unit_standard: draft.custom_factor_unit,
+      emission_type: 'Lifecycle/LCA',
+      gwp_set: draft.gwp_set,
+      co2_fraction: 1,
+      ch4_fraction: null,
+      n2o_fraction: null,
+      uncertainty_percent: null,
+      data_quality: draft.data_quality,
+      header: {
+        id: 'custom-preview',
+        category: draft.category,
+        activity_type: draft.activity_type || 'Custom activity',
+        region: settings.organizationCountry,
+        source: 'Other',
+        source_version: null,
+        is_locked: false,
+      },
+    } as any);
 
-  const calcResult = bestFactor && quantity && unit
-    ? calculateEmission(parseFloat(quantity), unit, bestFactor.factor)
-    : null;
+  const preview = useMemo(() => {
+    if (!quantityValue || !draft.unit) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!calcResult || !bestFactor) {
-      toast({ title: 'Validation Error', description: 'Please complete all required fields.', variant: 'destructive' });
+    if (draft.use_custom_factor) {
+      const customFactorValue = Number(draft.custom_factor_value);
+      if (!customFactorValue || !draft.custom_factor_unit) return null;
+      return calculateCustomFactorEmission(
+        quantityValue,
+        draft.unit,
+        customFactorValue,
+        normalizeUnit(draft.custom_factor_unit),
+        baseTemplateFactor
+      );
+    }
+
+    if (!bestFactor) return null;
+    const result = calculateEmission(quantityValue, draft.unit, bestFactor.factor);
+    if (!result) return null;
+
+    return {
+      ...result,
+      is_assumed_factor: bestFactor.isAssumed,
+      confidence_score: bestFactor.isAssumed
+        ? Math.max(40, result.confidence_score - 12)
+        : result.confidence_score,
+    };
+  }, [baseTemplateFactor, bestFactor, draft.custom_factor_unit, draft.custom_factor_value, draft.unit, draft.use_custom_factor, quantityValue]);
+
+  const varianceInsight = useMemo(
+    () =>
+      quantityValue && draft.activity_type
+        ? createRealtimeVarianceInsight(
+            {
+              category: draft.category,
+              activity_type: draft.activity_type,
+              quantity: quantityValue,
+              unit: draft.unit,
+            },
+            (historicalEntries ?? []).map((entry: any) => ({
+              category: entry.category,
+              activity_type: entry.activity_type,
+              quantity: Number(entry.quantity),
+            }))
+          )
+        : null,
+    [draft.activity_type, draft.category, draft.unit, historicalEntries, quantityValue]
+  );
+
+  const matchingCustomFactors = useMemo(
+    () =>
+      (customFactors ?? []).filter(
+        (factor: any) => factor.category === draft.category && factor.activity_type === draft.activity_type
+      ),
+    [customFactors, draft.activity_type, draft.category]
+  );
+
+  const selectedOrganization =
+    catalog?.organizations.find((organization) => organization.id === draft.organization_id) ?? catalog?.organizations[0];
+  const periodsForOrganization = (catalog?.reportingPeriods ?? []).filter(
+    (period) => period.organization_id === draft.organization_id
+  );
+
+  const setDraftField = <K extends keyof WizardDraft>(field: K, value: WizardDraft[K]) => {
+    setDraft((current) => ({ ...current, [field]: value }));
+  };
+
+  const resetDraft = () => {
+    setDraft({
+      ...DEFAULT_DRAFT,
+      organization_id: draft.organization_id,
+      reporting_period_id: draft.reporting_period_id,
+      entry_date: new Date().toISOString().slice(0, 10),
+    });
+    setEvidenceFile(null);
+  };
+
+  const handleSubmit = async (mode: 'draft' | 'pending_audit') => {
+    if (!preview) {
+      toast({
+        title: 'Calculation incomplete',
+        description: 'Complete the activity details and factor inputs before saving the record.',
+        variant: 'destructive',
+      });
       return;
     }
 
     try {
+      if (draft.use_custom_factor && draft.save_custom_factor) {
+        await createCustomFactor.mutateAsync({
+          organization_id: draft.organization_id,
+          scope: draft.scope,
+          category: draft.category,
+          activity_type: draft.activity_type,
+          unit: normalizeUnit(draft.custom_factor_unit),
+          emission_factor: Number(draft.custom_factor_value),
+          source: draft.custom_factor_source || 'Organization Specific',
+          source_reference: draft.source_document_ref,
+          gwp_set: draft.gwp_set,
+          data_quality: draft.data_quality,
+          notes: draft.notes,
+        });
+      }
+
       const entry = await createEntry.mutateAsync({
-        organization_id: DEMO_ORG_ID,
-        scope,
-        scope_category: scopeCategory || undefined,
-        category,
-        activity_type: activityType,
-        quantity: parseFloat(quantity),
-        unit,
-        converted_quantity: calcResult.converted_quantity,
-        converted_unit: calcResult.converted_unit,
-        factor_id: bestFactor.factor.header.id,
-        factor_value_id: bestFactor.factor.id,
-        emission_kgco2e: calcResult.emission_kgco2e,
-        emission_co2: calcResult.emission_co2 ?? undefined,
-        emission_ch4: calcResult.emission_ch4 ?? undefined,
-        emission_n2o: calcResult.emission_n2o ?? undefined,
-        data_quality: dataQuality,
-        is_assumed_factor: bestFactor.isAssumed,
-        notes: notes || undefined,
+        organization_id: draft.organization_id,
+        reporting_period_id: draft.reporting_period_id,
+        entry_date: draft.entry_date,
+        scope: draft.scope,
+        scope_category: draft.scope_category,
+        category: draft.category,
+        activity_type: draft.activity_type,
+        quantity: quantityValue,
+        unit: draft.unit,
+        converted_quantity: preview.converted_quantity,
+        converted_unit: preview.converted_unit,
+        factor_id: draft.use_custom_factor ? undefined : bestFactor?.factor.header.id,
+        factor_value_id: draft.use_custom_factor ? undefined : bestFactor?.factor.id,
+        emission_kgco2e: preview.emission_kgco2e,
+        emission_co2: preview.emission_co2 ?? undefined,
+        emission_ch4: preview.emission_ch4 ?? undefined,
+        emission_n2o: preview.emission_n2o ?? undefined,
+        data_quality: draft.data_quality,
+        is_assumed_factor: draft.use_custom_factor ? false : bestFactor?.isAssumed,
+        notes: buildEntryNotes(draft),
+        status: mode,
+        validation_status: mode === 'pending_audit' ? 'under_review' : 'pending',
+        approval_status: mode === 'pending_audit' ? 'pending' : 'not_required',
+        source_channel: draft.use_custom_factor ? 'custom_factor' : 'manual',
+        source_document_ref: draft.source_document_ref,
+        confidence_score: preview.confidence_score,
+        site_name: draft.site_name,
+        supplier_name: draft.supplier_name,
       });
 
-      if (evidenceFile && entry) {
+      if (evidenceFile) {
         await uploadEvidence.mutateAsync({ entryId: entry.id, file: evidenceFile });
       }
 
-      toast({ 
-        title: 'Form Submitted Successfully', 
-        description: `Entry for ${category} (${formatEmission(calcResult.emission_kgco2e)}) locked as ${submitStatus}.` 
+      toast({
+        title: mode === 'pending_audit' ? 'Submitted for review' : 'Draft saved',
+        description: `${draft.activity_type} was recorded at ${formatEmission(preview.emission_kgco2e)}.`,
       });
-      
-      setQuantity('');
-      setNotes('');
-      setEvidenceFile(null);
-    } catch (err: any) {
-      toast({ title: 'Submission Failed', description: err.message, variant: 'destructive' });
+
+      resetDraft();
+    } catch (error: any) {
+      toast({
+        title: 'Unable to save entry',
+        description: error.message ?? 'Please try again after reviewing the form.',
+        variant: 'destructive',
+      });
     }
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-10 pb-20">
-      <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-muted pb-6">
+    <div className="mx-auto max-w-7xl space-y-6">
+      <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <Badge variant="outline" className="mb-2 bg-primary/5 text-primary border-primary/20 font-bold uppercase tracking-widest text-[10px]">
-            Inventory Phase 1
-          </Badge>
-          <h1 className="text-4xl font-black font-heading text-primary uppercase tracking-tighter">Audit-Ready Data Input</h1>
-          <p className="text-muted-foreground font-medium italic mt-1">Structured Activity Recording & Emission Benchmarking</p>
+          <Badge className="border-none bg-primary/10 text-primary">Guided carbon audit wizard</Badge>
+          <h2 className="mt-3 text-4xl font-black tracking-tight text-foreground">Capture, validate, and queue activity data with confidence.</h2>
+          <p className="mt-2 max-w-3xl text-muted-foreground">
+            Autosave is active. The wizard highlights unusual values, supports custom factors, and keeps the audit trail
+            ready for formal review.
+          </p>
         </div>
-        <div className="hidden md:flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest bg-muted/20 px-4 py-2 rounded-full border border-muted/30">
-          <Shield className="w-4 h-4 text-secondary" /> ISO 14064 Compliance Tier
+        <div className="rounded-2xl border border-border/70 bg-card/80 px-4 py-3 text-sm text-muted-foreground shadow-sm">
+          Draft autosaved for {selectedOrganization?.name ?? settings.organizationName}
         </div>
-      </div>
+      </section>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Classification Column */}
-          <div className="lg:col-span-4 space-y-8">
-            <Card className="shadow-lg border-none bg-white overflow-hidden">
-              <CardHeader className="bg-primary pt-4 pb-4">
-                <CardTitle className="text-xs font-black uppercase text-white flex items-center gap-2 tracking-[.2em]">
-                  <Database className="w-4 h-4 opacity-70" /> 01. Classification
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6 space-y-6">
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">GHG Scope Selection</Label>
-                  <Select value={scope} onValueChange={(v) => { setScope(v); setScopeCategory(''); }}>
-                    <SelectTrigger className="bg-muted/30 border-none font-bold text-primary">
-                      <SelectValue placeholder="Select Scope" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.keys(SCOPE_CATEGORIES).map(s => <SelectItem key={s} value={s} className="font-bold">{s}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {scope && (
-                  <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Protocol Category Code</Label>
-                    <Select value={scopeCategory} onValueChange={setScopeCategory}>
-                      <SelectTrigger className="bg-muted/30 border-none font-bold">
-                        <SelectValue placeholder="Select Category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {SCOPE_CATEGORIES[scope as keyof typeof SCOPE_CATEGORIES]?.map(c => (
-                          <SelectItem key={c.code} value={c.code} className="text-xs">
-                            <span className="font-black text-primary mr-2">{c.code}</span> {c.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-                
-                <div className="pt-2">
-                   <div className="flex items-start gap-3 p-3 bg-secondary/5 rounded-lg border border-secondary/10">
-                     <Info className="w-4 h-4 text-secondary mt-0.5 shrink-0" />
-                     <p className="text-[10px] leading-relaxed text-secondary-foreground font-medium italic">
-                       Scope classification is governed by the GHG Protocol Corporate Standard boundary definitions.
-                     </p>
-                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Activity Mapping Column */}
-          <div className="lg:col-span-8 space-y-8">
-            <Card className="shadow-lg border-none bg-white overflow-hidden">
-              <CardHeader className="bg-secondary pt-4 pb-4">
-                <CardTitle className="text-xs font-black uppercase text-white flex items-center gap-2 tracking-[.2em]">
-                  <Search className="w-4 h-4 opacity-70" /> 02. Activity Mapping & Quantification
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-8 space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Emission Source Category</Label>
-                    <Select value={category} onValueChange={(v) => { setCategory(v); setActivityType(''); }}>
-                      <SelectTrigger className="bg-muted/30 border-none font-extrabold text-primary h-12">
-                        <SelectValue placeholder="Activity Group" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {EMISSION_CATEGORIES.map(c => <SelectItem key={c} value={c} className="font-bold">{c}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Specific Activity Detail</Label>
-                    <Select value={activityType} onValueChange={setActivityType} disabled={!category || activityTypes.length === 0}>
-                       <SelectTrigger className="bg-muted/30 border-none font-extrabold h-12">
-                         <SelectValue placeholder={!category ? "Waiting for selection..." : "Select specific type"} />
-                       </SelectTrigger>
-                       <SelectContent>
-                         {activityTypes.map(a => <SelectItem key={a} value={a} className="font-medium">{a}</SelectItem>)}
-                       </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end border-t border-muted pt-8">
-                  <div className="md:col-span-1 space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Measured Quantity</Label>
-                    <Input 
-                      type="number" 
-                      step="any" 
-                      min="0" 
-                      value={quantity} 
-                      onChange={(e) => setQuantity(e.target.value)} 
-                      placeholder="0.00" 
-                      className="bg-muted/30 border-none text-2xl font-black text-primary h-14" 
-                    />
-                  </div>
-                  <div className="md:col-span-1 space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Unit of Measure</Label>
-                    <Select value={unit} onValueChange={setUnit}>
-                      <SelectTrigger className="bg-muted/30 border-none font-black h-14">
-                        <SelectValue placeholder="Unit" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(availableUnits.length > 0 ? [...new Set(availableUnits)] : ['L', 'kWh', 'km', 'kg', 'MWh']).map(u => <SelectItem key={u} value={u} className="font-bold">{u}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="md:col-span-1 pb-1">
-                     <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 flex flex-col justify-center h-14">
-                        <Label className="text-[8px] font-black uppercase text-primary/60 tracking-tighter italic">Governing EF (Linked)</Label>
-                        {bestFactor ? (
-                          <div className="flex items-baseline gap-1.5 overflow-hidden">
-                            <span className="text-lg font-black text-primary tabular-nums truncate">{bestFactor.factor.emission_factor}</span>
-                            <span className="text-[9px] text-muted-foreground font-bold whitespace-nowrap">kgCO₂e/{bestFactor.factor.unit_standard}</span>
-                          </div>
-                        ) : (
-                          <span className="text-[10px] text-muted-foreground italic font-medium">Auto-mapping...</span>
-                        )}
-                     </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Premium Calculation Preview */}
-            <div className="relative group perspective-1000">
-              {calcResult ? (
-                <div className="bg-primary text-white p-8 rounded-2xl shadow-2xl border border-white/10 flex flex-col md:flex-row justify-between items-center gap-6 animate-in zoom-in-95 duration-500 overflow-hidden">
-                  <div className="absolute top-0 right-0 p-10 opacity-10 rotate-12">
-                     <Leaf className="w-32 h-32" />
-                  </div>
-                  
-                  <div className="relative z-10 text-center md:text-left">
-                    <p className="text-[10px] uppercase font-black opacity-80 tracking-[0.3em] mb-2 drop-shadow-sm">Calculated GHG Footprint</p>
-                    <h2 className="text-6xl font-black font-heading tracking-tighter flex items-baseline gap-2">
-                      {formatEmission(calcResult.emission_kgco2e).split(' ')[0]}
-                      <span className="text-xl opacity-80">{formatEmission(calcResult.emission_kgco2e).split(' ')[1]}</span>
-                    </h2>
-                    <Badge className="mt-4 bg-white/20 text-white border-none font-bold italic tracking-widest text-[9px]">BENCHMARKED VIA {bestFactor?.factor.header.source || "OFFICIAL"}</Badge>
-                  </div>
-                  
-                  <div className="relative z-10 bg-black/20 backdrop-blur-md p-6 rounded-2xl flex flex-col items-center md:items-end text-xs font-bold border border-white/10 tabular-nums">
-                    <div className="flex items-center gap-3 mb-2">
-                       <span className="opacity-60">{quantity} {unit}</span>
-                       <div className="h-px w-8 bg-white/20" />
-                       <span className="text-accent underline underline-offset-4 decoration-accent/50">{calcResult.converted_quantity.toFixed(3)} {calcResult.converted_unit}</span>
-                    </div>
-                    <p className="text-[10px] text-white/50 uppercase tracking-widest font-black flex items-center gap-1.5 mt-2">
-                       <Check className="w-3 h-3 text-accent" /> Audit Trail Initialized
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-muted/10 p-12 rounded-2xl border-2 border-dashed border-muted flex flex-col items-center justify-center text-center">
-                   <AlertTriangle className="w-10 h-10 text-muted-foreground/30 mb-4" />
-                   <p className="text-muted-foreground font-bold uppercase tracking-widest text-xs">Awaiting Numerical Input for Computation</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Metadata & Evidence */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pt-4">
-          <Card className="md:col-span-7 shadow-lg border-none bg-white overflow-hidden">
-            <CardHeader className="bg-muted/50 pb-4 border-b">
-              <CardTitle className="text-[10px] font-black uppercase text-muted-foreground tracking-[.2em] flex items-center gap-2">
-                <FileText className="w-4 h-4 text-primary/60" /> Audit Trail Narrative
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <Textarea 
-                value={notes} 
-                onChange={(e) => setNotes(e.target.value)} 
-                placeholder="Specify the functional boundary, data source reliability, or any assumptions made during recording..." 
-                className="min-h-[120px] bg-muted/20 border-none font-medium text-sm focus-visible:ring-primary" 
-              />
-            </CardContent>
-          </Card>
-          
-          <Card className="md:col-span-5 shadow-lg border-none bg-white overflow-hidden">
-            <CardHeader className="bg-muted/50 pb-4 border-b">
-              <CardTitle className="text-[10px] font-black uppercase text-muted-foreground tracking-[.2em] flex items-center gap-2">
-                <Upload className="w-4 h-4 text-primary/60" /> Evidence Management
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6 space-y-6">
-              <div className="relative group">
-                <Input 
-                  type="file" 
-                  onChange={(e) => setEvidenceFile(e.target.files?.[0] || null)} 
-                  className="hidden" 
-                  id="evidence-upload" 
-                />
-                <label 
-                  htmlFor="evidence-upload" 
-                  className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-muted rounded-xl bg-muted/10 group-hover:bg-primary/5 group-hover:border-primary/30 transition-all cursor-pointer"
+      <section className="grid gap-6 xl:grid-cols-[1.35fr_0.9fr]">
+        <div className="space-y-6">
+          <WizardSection
+            step="01"
+            title="Workspace and audit boundary"
+            description="Select the organization, reporting period, and source context for this activity record."
+          >
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field label="Organization">
+                <Select
+                  value={draft.organization_id}
+                  onValueChange={(value) => {
+                    const organization = (catalog?.organizations ?? []).find((item) => item.id === value);
+                    const nextReportingPeriod =
+                      (catalog?.reportingPeriods ?? []).find((period) => period.organization_id === value) ?? null;
+                    setDraft((current) => ({
+                      ...current,
+                      organization_id: value,
+                      reporting_period_id: nextReportingPeriod?.id ?? current.reporting_period_id,
+                    }));
+                    updateSettings({
+                      selectedOrganizationId: value,
+                      selectedReportingPeriodId: nextReportingPeriod?.id ?? settings.selectedReportingPeriodId,
+                      organizationName: organization?.name ?? settings.organizationName,
+                      organizationCountry: organization?.country ?? settings.organizationCountry,
+                      industry: organization?.industry ?? settings.industry,
+                      reportingCurrency: organization?.reporting_currency ?? settings.reportingCurrency,
+                    });
+                  }}
                 >
-                   {evidenceFile ? (
-                     <>
-                       <div className="p-3 bg-primary/10 rounded-full mb-2"><Check className="w-6 h-6 text-primary" /></div>
-                       <p className="text-xs font-black text-primary truncate max-w-full">{evidenceFile.name}</p>
-                       <p className="text-[10px] text-muted-foreground mt-1">Ready for secure upload</p>
-                     </>
-                   ) : (
-                     <>
-                       <Upload className="w-8 h-8 text-muted-foreground/30 mb-2 group-hover:text-primary/50 transition-colors" />
-                       <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Upload Compliance Evidence</p>
-                       <p className="text-[9px] text-muted-foreground/60 mt-1 italic">Bills, Certificates, or Invoices (Max 10MB)</p>
-                     </>
-                   )}
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select organization" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(catalog?.organizations ?? []).map((organization) => (
+                      <SelectItem key={organization.id} value={organization.id}>
+                        {organization.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Reporting period">
+                <Select
+                  value={draft.reporting_period_id}
+                  onValueChange={(value) => {
+                    setDraftField('reporting_period_id', value);
+                    updateSettings({ selectedReportingPeriodId: value });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select reporting period" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {periodsForOrganization.map((period) => (
+                      <SelectItem key={period.id} value={period.id}>
+                        {period.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Entry date">
+                <Input type="date" value={draft.entry_date} onChange={(event) => setDraftField('entry_date', event.target.value)} />
+              </Field>
+              <Field label="Source reference">
+                <Input
+                  placeholder="Invoice, bill, spreadsheet, or meter ID"
+                  value={draft.source_document_ref}
+                  onChange={(event) => setDraftField('source_document_ref', event.target.value)}
+                />
+              </Field>
+              <Field label="Site name">
+                <Input placeholder="Main plant, HQ, warehouse..." value={draft.site_name} onChange={(event) => setDraftField('site_name', event.target.value)} />
+              </Field>
+              <Field label="Supplier or owner">
+                <Input placeholder="Utility, airline, vendor..." value={draft.supplier_name} onChange={(event) => setDraftField('supplier_name', event.target.value)} />
+              </Field>
+            </div>
+          </WizardSection>
+
+          <WizardSection
+            step="02"
+            title="Scope, source, and activity mapping"
+            description="Map the record to the correct scope and activity so the engine can select the best factor."
+          >
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field label="Scope">
+                <Select
+                  value={draft.scope}
+                  onValueChange={(value) => {
+                    setDraft((current) => ({
+                      ...current,
+                      scope: value,
+                      scope_category: SCOPE_CATEGORIES[value as keyof typeof SCOPE_CATEGORIES]?.[0]?.code ?? '',
+                    }));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select scope" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(SCOPE_CATEGORIES).map((scope) => (
+                      <SelectItem key={scope} value={scope}>
+                        {scope}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Scope category">
+                <Select value={draft.scope_category} onValueChange={(value) => setDraftField('scope_category', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(SCOPE_CATEGORIES[draft.scope as keyof typeof SCOPE_CATEGORIES] ?? []).map((item) => (
+                      <SelectItem key={item.code} value={item.code}>
+                        {item.code} - {item.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Emission category">
+                <Select
+                  value={draft.category}
+                  onValueChange={(value) => {
+                    setDraft((current) => ({
+                      ...current,
+                      category: value,
+                      activity_type: '',
+                    }));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EMISSION_CATEGORIES.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Activity type">
+                <Select value={draft.activity_type} onValueChange={(value) => setDraftField('activity_type', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select activity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activityOptions.map((activity) => (
+                      <SelectItem key={activity} value={activity}>
+                        {activity}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            </div>
+
+            {matchingCustomFactors.length > 0 && (
+              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+                <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
+                  {matchingCustomFactors.length} approved custom factor{matchingCustomFactors.length > 1 ? 's are' : ' is'} available
+                  for this activity.
+                </p>
+                <p className="mt-1 text-sm text-emerald-700/80 dark:text-emerald-300/80">
+                  Toggle the custom factor mode below if you want to use organization-specific calculations instead of the
+                  default library factor.
+                </p>
+              </div>
+            )}
+          </WizardSection>
+
+          <WizardSection
+            step="03"
+            title="Quantity, factor selection, and live preview"
+            description="Enter the activity data. The system recalculates instantly and flags unusual values."
+          >
+            <div className="grid gap-4 md:grid-cols-3">
+              <Field label="Quantity">
+                <Input
+                  type="number"
+                  min="0"
+                  step="any"
+                  placeholder="0.00"
+                  value={draft.quantity}
+                  onChange={(event) => setDraftField('quantity', event.target.value)}
+                />
+              </Field>
+              <Field label="Unit">
+                <Input value={draft.unit} onChange={(event) => setDraftField('unit', event.target.value)} placeholder="kWh, litre, kg..." />
+              </Field>
+              <Field label="Data quality">
+                <Select value={draft.data_quality} onValueChange={(value) => setDraftField('data_quality', value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DATA_QUALITY_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-[1fr_1.1fr]">
+              <Card className="border-border/70">
+                <CardHeader>
+                  <CardTitle className="text-lg">Factor source</CardTitle>
+                  <CardDescription>Use the official library factor or enter an approved custom value.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between rounded-2xl border border-border/70 bg-background/80 p-4">
+                    <div>
+                      <p className="font-medium text-foreground">Use custom emission factor</p>
+                      <p className="text-sm text-muted-foreground">Great for supplier-specific or audited internal factors.</p>
+                    </div>
+                    <Switch checked={draft.use_custom_factor} onCheckedChange={(checked) => setDraftField('use_custom_factor', checked)} />
+                  </div>
+
+                  {draft.use_custom_factor ? (
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <Field label="Custom factor value">
+                        <Input
+                          type="number"
+                          min="0"
+                          step="any"
+                          value={draft.custom_factor_value}
+                          onChange={(event) => setDraftField('custom_factor_value', event.target.value)}
+                          placeholder="kgCO2e per unit"
+                        />
+                      </Field>
+                      <Field label="Factor unit">
+                        <Input
+                          value={draft.custom_factor_unit}
+                          onChange={(event) => setDraftField('custom_factor_unit', event.target.value)}
+                          placeholder="kWh, kg, km..."
+                        />
+                      </Field>
+                      <Field label="Factor source">
+                        <Input
+                          value={draft.custom_factor_source}
+                          onChange={(event) => setDraftField('custom_factor_source', event.target.value)}
+                          placeholder="Supplier EPD, metered fuel study..."
+                        />
+                      </Field>
+                      <Field label="GWP set">
+                        <Select value={draft.gwp_set} onValueChange={(value) => setDraftField('gwp_set', value)}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {GWP_SETS.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                      <div className="md:col-span-2 flex items-center justify-between rounded-2xl border border-border/70 bg-background/80 p-4">
+                        <div>
+                          <p className="font-medium text-foreground">Save this factor to the custom library</p>
+                          <p className="text-sm text-muted-foreground">Approved custom factors can be reused across future audits.</p>
+                        </div>
+                        <Switch checked={draft.save_custom_factor} onCheckedChange={(checked) => setDraftField('save_custom_factor', checked)} />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+                      {bestFactor ? (
+                        <>
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <p className="font-semibold text-foreground">{bestFactor.factor.header.activity_type}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {bestFactor.factor.header.source} {bestFactor.factor.header.source_version ?? ''}
+                              </p>
+                            </div>
+                            <Badge variant="outline">
+                              {bestFactor.factor.emission_factor} kgCO2e/{bestFactor.factor.unit_standard}
+                            </Badge>
+                          </div>
+                          <p className="mt-3 text-sm text-muted-foreground">
+                            {bestFactor.isAssumed
+                              ? 'No country-specific factor was found, so the engine selected the closest approved proxy factor.'
+                              : 'The engine selected the highest-priority factor available for your region and activity.'}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          No official factor matches the selected activity yet. Use the custom factor option to continue this record.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="overflow-hidden border-border/70 bg-[linear-gradient(135deg,rgba(15,95,75,0.96),rgba(20,108,148,0.95))] text-white">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <BrainCircuit className="h-5 w-5" />
+                    Live calculation preview
+                  </CardTitle>
+                  <CardDescription className="text-white/75">
+                    Every input change immediately updates the carbon result and risk signals.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {preview ? (
+                    <>
+                      <div className="rounded-3xl border border-white/15 bg-white/10 p-5">
+                        <p className="text-xs uppercase tracking-[0.22em] text-white/65">Calculated footprint</p>
+                        <p className="mt-2 text-4xl font-black tracking-tight">{formatEmission(preview.emission_kgco2e)}</p>
+                        <p className="mt-2 text-sm text-white/75">
+                          Converted quantity: {preview.converted_quantity.toFixed(2)} {preview.converted_unit}
+                        </p>
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div className="rounded-2xl border border-white/15 bg-white/10 p-4">
+                          <p className="text-xs uppercase tracking-[0.22em] text-white/65">Confidence</p>
+                          <p className="mt-2 text-2xl font-bold">{preview.confidence_score}%</p>
+                        </div>
+                        <div className="rounded-2xl border border-white/15 bg-white/10 p-4">
+                          <p className="text-xs uppercase tracking-[0.22em] text-white/65">Factor type</p>
+                          <p className="mt-2 text-lg font-semibold">
+                            {draft.use_custom_factor ? 'Custom factor' : bestFactor?.isAssumed ? 'Proxy factor' : 'Official factor'}
+                          </p>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="rounded-3xl border border-dashed border-white/25 bg-white/5 p-6 text-sm text-white/75">
+                      Enter quantity, unit, and a factor source to activate the live preview.
+                    </div>
+                  )}
+
+                  {varianceInsight && (
+                    <div className="rounded-2xl border border-amber-400/30 bg-amber-500/15 p-4 text-sm text-white">
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 text-amber-200" />
+                        <div>
+                          <p className="font-semibold">AI review signal</p>
+                          <p className="mt-1 text-white/80">{varianceInsight.message}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </WizardSection>
+
+          <WizardSection
+            step="04"
+            title="Evidence, notes, and final routing"
+            description="Attach support files, capture assumptions, and either save a draft or submit to the audit queue."
+          >
+            <div className="grid gap-4 lg:grid-cols-[1fr_0.95fr]">
+              <Field label="Audit notes and assumptions">
+                <Textarea
+                  className="min-h-[180px]"
+                  placeholder="Document meter assumptions, supplier references, estimation methods, or reviewer notes."
+                  value={draft.notes}
+                  onChange={(event) => setDraftField('notes', event.target.value)}
+                />
+              </Field>
+              <div className="space-y-2">
+                <Label>Evidence upload</Label>
+                <label
+                  className={`flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed p-6 text-center transition ${
+                    isDragging ? 'border-primary bg-primary/10' : 'border-border bg-background/70'
+                  }`}
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    setIsDragging(true);
+                  }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    setIsDragging(false);
+                    const file = event.dataTransfer.files?.[0];
+                    if (file) setEvidenceFile(file);
+                  }}
+                >
+                  <input
+                    type="file"
+                    className="hidden"
+                    onChange={(event) => setEvidenceFile(event.target.files?.[0] ?? null)}
+                  />
+                  <FileUp className="h-8 w-8 text-primary" />
+                  <p className="mt-3 font-semibold text-foreground">
+                    {evidenceFile ? evidenceFile.name : 'Drop invoices, bills, or spreadsheets here'}
+                  </p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Drag and drop or click to upload evidence for the audit trail.
+                  </p>
                 </label>
               </div>
-              <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg text-[10px] text-muted-foreground font-medium border border-muted/50">
-                <Shield className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
-                Evidence is hashed and stored in encrypted storage for ISO 14064 reconciliation.
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-full"
+                onClick={() => handleSubmit('draft')}
+                disabled={createEntry.isPending || uploadEvidence.isPending}
+              >
+                <Save className="mr-2 h-4 w-4" />
+                Save draft
+              </Button>
+              <Button
+                type="button"
+                className="rounded-full"
+                onClick={() => handleSubmit('pending_audit')}
+                disabled={createEntry.isPending || uploadEvidence.isPending}
+              >
+                <Wand2 className="mr-2 h-4 w-4" />
+                Submit for audit review
+              </Button>
+              <Button type="button" variant="ghost" className="rounded-full" onClick={resetDraft}>
+                Reset form
+              </Button>
+            </div>
+          </WizardSection>
+        </div>
+
+        <div className="space-y-6">
+          <Card className="border-border/70 bg-card/80 shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Guided workflow
+              </CardTitle>
+              <CardDescription>Each step is designed so a non-specialist can finish an audit pack quickly.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {[
+                'Choose the reporting boundary and source document.',
+                'Map the activity to the right scope and category.',
+                'Review the live factor match and anomaly checks.',
+                'Attach evidence and route the record for approval.',
+              ].map((step, index) => (
+                <div key={step} className="flex items-start gap-3 rounded-2xl border border-border/70 bg-background/80 p-4">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
+                    {index + 1}
+                  </div>
+                  <p className="text-sm text-muted-foreground">{step}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/70 bg-card/80 shadow-sm">
+            <CardHeader>
+              <CardTitle>Smart suggestions</CardTitle>
+              <CardDescription>Contextual guidance based on the current draft and your recent activity history.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <SuggestionCard
+                title="Use specific evidence names"
+                detail="Uploading bills or supplier spreadsheets with descriptive names makes review much faster."
+              />
+              <SuggestionCard
+                title="Prefer supplier-specific factors for material categories"
+                detail="If supplier EPDs or metered studies exist, store them as custom factors to replace proxy assumptions."
+              />
+              {preview && (
+                <SuggestionCard
+                  title="Review confidence before submission"
+                  detail={`Current confidence is ${preview.confidence_score}%. Entries above 80% usually move through the audit queue faster.`}
+                />
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/70 bg-card/80 shadow-sm">
+            <CardHeader>
+              <CardTitle>Current factor catalog</CardTitle>
+              <CardDescription>Available activities from the official and custom factor libraries.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+                <p className="text-sm font-semibold text-foreground">
+                  {selectedHeaders.length} official factor headers in the current workspace
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {(customFactors ?? []).length} approved custom factors are also available for reuse.
+                </p>
               </div>
+              {matchingCustomFactors.slice(0, 2).map((factor: any) => (
+                <div key={factor.id} className="rounded-2xl border border-border/70 bg-background/80 p-4">
+                  <p className="font-semibold text-foreground">{factor.activity_type}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {factor.emission_factor} kgCO2e/{factor.unit} from {factor.source}
+                  </p>
+                </div>
+              ))}
+              {matchingCustomFactors.length === 0 && (
+                <div className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+                  No custom factors match the current activity yet.
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
-
-        {/* Final Actions */}
-        <div className="flex flex-col sm:flex-row gap-4 pt-10 border-t border-muted">
-          <Button 
-            type="submit" 
-            variant="outline" 
-            className="flex-1 font-black text-xs text-muted-foreground hover:bg-muted py-8 uppercase tracking-[.2em] border-muted-foreground/20 rounded-xl"
-            disabled={!calcResult || createEntry.isPending} 
-            onClick={() => setSubmitStatus('draft')}
-          >
-            Save Audit Draft
-          </Button>
-          <Button 
-            type="submit" 
-            className="flex-1 font-black bg-primary hover:bg-primary/90 text-white shadow-2xl py-8 rounded-xl text-lg uppercase tracking-widest ring-offset-background transition-all hover:scale-[1.02] active:scale-[0.98]" 
-            disabled={!calcResult || createEntry.isPending} 
-            onClick={() => setSubmitStatus('pending_audit')}
-          >
-            {createEntry.isPending ? (
-              <span className="flex items-center gap-2"><div className="w-4 h-4 rounded-full border-2 border-white/20 border-t-white animate-spin" /> Finalizing...</span>
-            ) : (
-              'Submit for Formal Verification'
-            )}
-          </Button>
-        </div>
-      </form>
+      </section>
     </div>
   );
 }
 
-const Tooltip = ({ children, text }: { children: React.ReactNode, text: string }) => (
-  <div className="group relative">
-    {children}
-    <div className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-[10px] p-2 rounded shadow-xl whitespace-nowrap z-50">
-      {text}
-    </div>
-  </div>
-);
+function buildEntryNotes(draft: WizardDraft) {
+  const parts = [draft.notes];
 
+  if (draft.source_document_ref) {
+    parts.push(`Source reference: ${draft.source_document_ref}`);
+  }
+
+  if (draft.use_custom_factor) {
+    parts.push(`Custom factor: ${draft.custom_factor_value} kgCO2e/${normalizeUnit(draft.custom_factor_unit)} from ${draft.custom_factor_source || 'Organization Specific'}.`);
+  }
+
+  return parts.filter(Boolean).join('\n');
+}
+
+function WizardSection({
+  step,
+  title,
+  description,
+  children,
+}: {
+  step: string;
+  title: string;
+  description: string;
+  children: ReactNode;
+}) {
+  return (
+    <Card className="border-border/70 bg-card/80 shadow-sm">
+      <CardHeader className="border-b border-border/60">
+        <div className="flex items-start gap-4">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-sm font-bold text-primary">
+            {step}
+          </div>
+          <div>
+            <CardTitle className="text-xl">{title}</CardTitle>
+            <CardDescription className="mt-1">{description}</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-5 p-6">{children}</CardContent>
+    </Card>
+  );
+}
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      {children}
+    </div>
+  );
+}
+
+function SuggestionCard({ title, detail }: { title: string; detail: string }) {
+  return (
+    <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+      <div className="flex items-start gap-3">
+        <CheckCircle2 className="mt-0.5 h-4 w-4 text-primary" />
+        <div>
+          <p className="font-semibold text-foreground">{title}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{detail}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
