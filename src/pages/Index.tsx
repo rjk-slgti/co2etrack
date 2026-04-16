@@ -70,7 +70,7 @@ export default function Dashboard() {
                 Command your carbon disclosure with high-precision audits.
               </h2>
               <p className="max-w-2xl text-lg text-white/60 font-medium leading-relaxed">
-                Automate your Scope 1, 2, and 3 calculations using the {organization?.reporting_standard ?? 'GHG Protocol'} framework. 
+                Automate your Scope 1, 2, and 3 calculations using the {'GHG Protocol'} framework. 
                 Verify anomalies, secure audit evidence, and export professional assurance packs.
               </p>
             </div>

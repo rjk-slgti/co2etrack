@@ -14,17 +14,21 @@ export function useAnomalyDetection(entryId: string | null) {
     queryFn: async (): Promise<AnomalyResult | null> => {
       if (!hasSupabaseConfig || !entryId) return null;
 
-      const { data, error } = await supabase.rpc('detect_activity_entry_anomaly', {
-        p_entry_id: entryId,
-      });
+      try {
+        const { data, error } = await supabase.rpc('detect_activity_entry_anomaly' as any, {
+          p_entry_id: entryId,
+        });
 
-      if (error) {
-        console.error('Anomaly detection error:', error);
+        if (error) {
+          console.error('Anomaly detection error:', error);
+          return null;
+        }
+
+        if (Array.isArray(data) && data.length > 0) {
+          return data[0] as AnomalyResult;
+        }
+      } catch {
         return null;
-      }
-
-      if (data && data.length > 0) {
-        return data[0] as AnomalyResult;
       }
 
       return null;

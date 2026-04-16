@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildExcelWorkbook, buildExecutiveNarrative, buildPrintableReportHtml } from './reporting';
+import { buildExcelWorkbook, buildExecutiveNarrative, buildReportHtml } from './reporting';
 
 const payload = {
   settings: {
@@ -84,8 +84,8 @@ describe('reporting', () => {
   });
 
   it('creates printable report html', () => {
-    const html = buildPrintableReportHtml(payload as any);
-    expect(html).toContain('Standard Carbon Audit Report');
+    const html = buildReportHtml(payload as any);
+    expect(html).toContain('GHG Inventory Report');
     expect(html).toContain('Detailed Inventory');
   });
 

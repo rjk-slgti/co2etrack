@@ -32,7 +32,7 @@ export function useEvidenceUpload() {
         if (uploadError) throw uploadError;
 
         const { data, error } = await supabase
-          .from('activity_evidence')
+          .from('activity_evidence' as any)
           .insert({
             activity_entry_id: entryId,
             file_path: filePath,

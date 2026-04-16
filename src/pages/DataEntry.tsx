@@ -780,8 +780,6 @@ export default function DataEntry() {
                 title="Upload PDF evidence"
                 detail="Machine-readable PDFs allow the Copilot to extract billing values 70% faster."
               />
-            </CardContent>
-          </Card>
               <SuggestionCard
                 title="Prefer supplier-specific factors for material categories"
                 detail="If supplier EPDs or metered studies exist, store them as custom factors to replace proxy assumptions."

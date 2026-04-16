@@ -3,6 +3,7 @@ import type {
   ComplianceChecklistItem,
   DriverBreakdown,
   ForecastSummary,
+  IntensityMetrics,
   ReductionOpportunity,
   ScopeName,
   ScopeSummary,

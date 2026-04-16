@@ -25,7 +25,7 @@ export function buildExecutiveNarrative(payload: ReportPayload) {
   
   return [
     `This report presents the consolidated greenhouse gas (GHG) inventory for ${settings.organizationName}, covering the reporting period ${new Date().getFullYear()}.`,
-    `The inventory was developed in accordance with the ${settings.primaryStandard} Corporate Standard and ISO 14064-1:2018 requirements, utilizing a ${settings.consolidationApproach?.toLowerCase() ?? 'operational control'} boundary approach.`,
+    `The inventory was developed in accordance with the ${settings.primaryStandard} Corporate Standard and ISO 14064-1:2018 requirements, utilizing a ${settings.boundaryApproach?.toLowerCase() ?? 'operational control'} boundary approach.`,
     `The total gross operational footprint is recorded at ${formatKg(summary.totalKg)}, with a market-based net contribution of ${formatKg(summary.marketBasedKg)}.`,
     mainDriver 
       ? `Analysis indicates ${mainDriver.label} (${mainDriver.scope}) as the primary material driver, representing ${mainDriver.share}% of consolidated emissions.` 
@@ -36,7 +36,7 @@ export function buildExecutiveNarrative(payload: ReportPayload) {
 }
 
 export function buildReportHtml(payload: ReportPayload) {
-  const { settings, summary, entries, user } = payload;
+  const { settings, summary, entries } = payload;
   
   // High-fidelity SVG Charts
   const scopeBreakdown = summary.scopeSummary.map((s, i) => {
@@ -116,7 +116,7 @@ export function buildReportHtml(payload: ReportPayload) {
         <div class="footer">
             <div style="font-size: 11px; font-weight: 600; color: #64748b;">
                 <div>Standard: ${escapeXml(settings.primaryStandard)}</div>
-                <div>Boundary: ${escapeXml(settings.consolidationApproach ?? 'Operational Control')}</div>
+                <div>Boundary: ${escapeXml(settings.boundaryApproach ?? 'Operational Control')}</div>
                 <div>Issued: ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
             </div>
             <div class="stamp">Verified Output</div>
@@ -235,7 +235,7 @@ export function buildReportHtml(payload: ReportPayload) {
         <div class="signature-grid">
             <div>
                 <div class="sig-line">Prepared by (Internal Lead)</div>
-                <div style="font-size: 13px; font-weight: 900; margin-top: 10px;">${user?.email ?? 'Carbon Manager'}</div>
+                <div style="font-size: 13px; font-weight: 900; margin-top: 10px;">Carbon Manager</div>
             </div>
             <div>
                 <div class="sig-line">Approved for Disclosure (Board Level)</div>

@@ -16,7 +16,7 @@ export function useAuditWorkspace() {
   const entries = useMemo(() => (entriesQuery.data ?? []) as any[], [entriesQuery.data]);
   
   const summary = useMemo(() => {
-    return buildWorkspaceSummary(entries, organization);
+    return buildWorkspaceSummary(entries, organization as any);
   }, [entries, organization]);
 
   return {
