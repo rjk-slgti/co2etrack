@@ -11,12 +11,14 @@ import {
   Factory,
   Home,
   CircuitBoard,
-  Briefcase
+  Briefcase,
+  Target
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Switch } from '@/components/ui/switch';
 import { useWorkspaceSettings } from '@/hooks/useWorkspaceSettings';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
