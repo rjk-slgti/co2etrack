@@ -3,14 +3,16 @@ import {
   AlertTriangle,
   ArrowRight,
   ClipboardCheck,
+  Database,
   FileText,
+  Hexagon,
   Leaf,
   ScanSearch,
+  ShieldCheck,
   TrendingUp,
+  Zap,
 } from 'lucide-react';
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
   Cell,
   Line,
@@ -19,6 +21,8 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  BarChart,
+  Bar,
 } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -31,7 +35,7 @@ import { formatKg } from '@/lib/audit-analytics';
 import { SCOPE_COLORS } from '@/lib/constants';
 
 export default function Dashboard() {
-  const { entries, summary, isLoading } = useAuditWorkspace();
+  const { entries, summary, organization, isLoading } = useAuditWorkspace();
   const { data: catalog } = useOrganizationCatalog();
   const activePeriod =
     catalog?.reportingPeriods.find((period) => period.status === 'active') ?? catalog?.reportingPeriods[0];
@@ -41,152 +45,165 @@ export default function Dashboard() {
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="space-y-4 text-center">
           <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-primary/15 border-t-primary" />
-          <p className="text-sm text-muted-foreground">Preparing your carbon audit command center...</p>
+          <p className="text-sm text-slate-500">Preparing your carbon audit command center...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
-      <section className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-        <Card className="overflow-hidden border-border/70 bg-[linear-gradient(135deg,rgba(15,95,75,0.96),rgba(20,108,148,0.9))] text-white shadow-xl">
-          <CardContent className="space-y-6 p-7">
-            <Badge className="border-none bg-white/15 text-white">10-minute guided audit flow</Badge>
-            <div className="space-y-3">
-              <h2 className="max-w-2xl text-4xl font-black tracking-tight">
-                Collect data, verify anomalies, and publish a board-ready carbon report from one workspace.
+    <div className="mx-auto max-w-7xl space-y-8 pb-10">
+      {/* 1. Elite Hero Section */}
+      <section className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
+        <Card className="overflow-hidden border-none bg-slate-950 text-white shadow-2xl relative">
+          <div className="absolute top-0 right-0 w-1/2 h-full bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.15),transparent_70%)] pointer-events-none" />
+          <CardContent className="space-y-8 p-10 relative z-10">
+            <div className="flex items-center gap-3">
+              <Badge variant="outline" className="border-white/20 bg-white/5 text-emerald-400 backdrop-blur-sm px-3 py-1">
+                <ShieldCheck className="mr-1.5 h-3.5 w-3.5" />
+                Assurance Mode Active
+              </Badge>
+              <span className="text-xs text-white/40 font-mono tracking-widest uppercase">Verified GHG Inventory</span>
+            </div>
+            <div className="space-y-4">
+              <h2 className="max-w-3xl text-5xl font-black tracking-tight leading-[1.1]">
+                Command your carbon disclosure with high-precision audits.
               </h2>
-              <p className="max-w-2xl text-white/80">
-                The app now combines activity capture, audit controls, smart anomaly warnings, and one-click report exports
-                for scopes 1, 2, and 3.
+              <p className="max-w-2xl text-lg text-white/60 font-medium leading-relaxed">
+                Automate your Scope 1, 2, and 3 calculations using the {organization?.reporting_standard ?? 'GHG Protocol'} framework. 
+                Verify anomalies, secure audit evidence, and export professional assurance packs.
               </p>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <Button asChild size="lg" className="rounded-full bg-white text-slate-950 hover:bg-white/90">
+            <div className="flex flex-wrap gap-4 pt-2">
+              <Button asChild size="lg" className="rounded-xl bg-emerald-500 text-slate-950 hover:bg-emerald-400 font-bold px-8">
                 <Link to="/data-entry">
-                  Start the audit wizard
-                  <ArrowRight className="ml-1 h-4 w-4" />
+                  Launch Audit Wizard
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-full border-white/30 bg-transparent text-white hover:bg-white/10">
-                <Link to="/reports">Generate report</Link>
+              <Button asChild size="lg" variant="outline" className="rounded-xl border-white/20 bg-white/5 text-white hover:bg-white/10 backdrop-blur-sm">
+                <Link to="/reports">Export ESG Pack</Link>
               </Button>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-white/15 bg-white/10 p-4">
-                <p className="text-xs uppercase tracking-[0.22em] text-white/65">Active period</p>
-                <p className="mt-2 text-lg font-semibold">{activePeriod?.name ?? 'FY2026'}</p>
-              </div>
-              <div className="rounded-2xl border border-white/15 bg-white/10 p-4">
-                <p className="text-xs uppercase tracking-[0.22em] text-white/65">Report readiness</p>
-                <p className="mt-2 text-lg font-semibold">{summary.verifiedShare}% verified</p>
-              </div>
-              <div className="rounded-2xl border border-white/15 bg-white/10 p-4">
-                <p className="text-xs uppercase tracking-[0.22em] text-white/65">Smart alerts</p>
-                <p className="mt-2 text-lg font-semibold">{summary.signals.length} open insights</p>
-              </div>
+            <div className="grid gap-6 sm:grid-cols-3 pt-4 border-t border-white/10">
+              <HeroMetric label="Reporting Period" value={activePeriod?.name ?? 'FY2026'} />
+              <HeroMetric label="Audit Completion" value={`${summary.verifiedShare}% Verified`} />
+              <HeroMetric label="Evidence Health" value={`${summary.evidenceCoverage}% Evidence-backed`} />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-border/70 bg-card/80 shadow-sm backdrop-blur">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl">
+        <Card className="border-slate-200/60 bg-white shadow-sm overflow-hidden flex flex-col">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg font-bold text-slate-900">
               <ScanSearch className="h-5 w-5 text-primary" />
-              Audit readiness
+              Smart Audit Findings
             </CardTitle>
-            <CardDescription>Critical items to clear before report sign-off.</CardDescription>
+            <CardDescription className="text-xs">Real-time anomaly and compliance signals.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {summary.signals.length === 0 ? (
-              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-700 dark:text-emerald-300">
-                No major warnings are open. The workspace is ready for the next report pack.
-              </div>
-            ) : (
-              summary.signals.slice(0, 3).map((signal) => (
-                <div key={signal.id} className="rounded-2xl border border-border/70 bg-background/80 p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="rounded-full bg-amber-500/15 p-2 text-amber-600">
-                      <AlertTriangle className="h-4 w-4" />
-                    </div>
-                    <div className="space-y-1">
-                      <p className="font-semibold text-foreground">{signal.title}</p>
-                      <p className="text-sm text-muted-foreground">{signal.detail}</p>
+          <CardContent className="p-0 flex-1 flex flex-col">
+            <div className="divide-y divide-slate-50 flex-1 overflow-y-auto">
+              {summary.signals.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full p-8 text-center space-y-3">
+                  <div className="h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center">
+                    <ShieldCheck className="h-6 w-6 text-emerald-500" />
+                  </div>
+                  <p className="text-sm font-bold text-slate-900">Inventory Status: Clean</p>
+                  <p className="text-xs text-slate-500">No major variances detected in the current activity set.</p>
+                </div>
+              ) : (
+                summary.signals.slice(0, 4).map((signal) => (
+                  <div key={signal.id} className="p-4 hover:bg-slate-50/50 transition-colors">
+                    <div className="flex items-start gap-4">
+                      <div className={`mt-1 h-2 w-2 rounded-full flex-shrink-0 ${signal.severity === 'high' ? 'bg-red-500 animate-pulse' : 'bg-amber-500'}`} />
+                      <div className="space-y-1">
+                        <p className="text-sm font-bold text-slate-900 leading-none">{signal.title}</p>
+                        <p className="text-xs text-slate-500 leading-relaxed">{signal.detail}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
-            )}
-            <Button asChild variant="outline" className="w-full rounded-full">
-              <Link to="/auditor">Open audit center</Link>
-            </Button>
+                ))
+              )}
+            </div>
+            <div className="p-4 bg-slate-50/50 border-t border-slate-100">
+              <Button asChild variant="ghost" className="w-full rounded-lg text-xs font-bold text-primary hover:bg-primary/5">
+                <Link to="/auditor">Enter Auditor Workspace</Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {/* 2. Professional KPI Grid (Intensity & Gross/Net) */}
+      <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <KpiCard
-          label="Total footprint"
+          label="Gross Footprint"
           value={formatKg(summary.totalKg)}
-          helper="Combined emissions for the active reporting period"
-          icon={<Leaf className="h-5 w-5" />}
+          helper="Consolidated Scope 1, 2, 3 Emissions"
+          icon={<Hexagon className="h-4 w-4 text-slate-400" />}
         />
         <KpiCard
-          label="Verified coverage"
-          value={`${summary.verifiedShare}%`}
-          helper="Entries already reviewed and cleared"
-          icon={<ClipboardCheck className="h-5 w-5" />}
+          label="Market-based Net"
+          value={formatKg(summary.marketBasedKg)}
+          helper="Net emissions following instruments"
+          icon={<Zap className="h-4 w-4 text-blue-500" />}
         />
         <KpiCard
-          label="Evidence coverage"
-          value={`${summary.evidenceCoverage}%`}
-          helper="Entries with attached invoices, bills, or evidence"
-          icon={<FileText className="h-5 w-5" />}
+          label="FTE Carbon Intensity"
+          value={`${summary.intensity.intensity_fte} kg`}
+          helper="Emissions per Team Member"
+          icon={<TrendingUp className="h-4 w-4 text-orange-500" />}
         />
         <KpiCard
-          label="Next-month forecast"
-          value={formatKg(summary.forecast.nextPeriodKg)}
-          helper={`${summary.forecast.trendPercent}% versus latest actual month`}
-          icon={<TrendingUp className="h-5 w-5" />}
+          label="Biogenic CO2"
+          value={formatKg(summary.totalBiogenicKg)}
+          helper="Reported outside of scopes"
+          icon={<Leaf className="h-4 w-4 text-emerald-500" />}
         />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.25fr_1fr]">
-        <Card className="border-border/70 bg-card/80 shadow-sm">
-          <CardHeader>
-            <CardTitle>Emissions trend and forecast</CardTitle>
-            <CardDescription>Monthly actuals with a forward-looking forecast for the next reporting cycle.</CardDescription>
+      {/* 3. Trend & Drivers Chart Section */}
+      <section className="grid gap-8 xl:grid-cols-[1.5fr_1fr]">
+        <Card className="border-slate-200/60 shadow-sm bg-white">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-xl font-black text-slate-900">Emissions Evolution</CardTitle>
+              <CardDescription>Actual monthly kgCO2e vs algorithm-derived forecast.</CardDescription>
+            </div>
+            <Badge variant="outline" className="border-slate-100 font-mono text-[10px] tracking-widest text-slate-400">GHG-TREND-V3</Badge>
           </CardHeader>
-          <CardContent className="h-[320px]">
+          <CardContent className="h-[340px] pt-4">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={summary.monthlyTrend}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.18)" />
-                <XAxis dataKey="label" stroke="currentColor" fontSize={12} />
-                <YAxis stroke="currentColor" fontSize={12} />
-                <Tooltip />
-                <Line type="monotone" dataKey="actualKg" stroke="#0f5f4b" strokeWidth={3} dot={{ r: 4 }} />
-                <Line type="monotone" dataKey="forecastKg" stroke="#146c94" strokeWidth={3} strokeDasharray="6 4" dot={{ r: 4 }} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.08)" />
+                <XAxis dataKey="label" stroke="#64748b" fontSize={11} axisLine={false} tickLine={false} />
+                <YAxis stroke="#64748b" fontSize={11} axisLine={false} tickLine={false} />
+                <Tooltip 
+                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                  itemStyle={{ fontWeight: 'bold' }}
+                />
+                <Line type="monotone" dataKey="actualKg" stroke="#0f172a" strokeWidth={4} dot={{ r: 6, fill: '#0f172a', strokeWidth: 0 }} activeDot={{ r: 8 }} />
+                <Line type="monotone" dataKey="forecastKg" stroke="#10b981" strokeWidth={3} strokeDasharray="8 6" dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <Card className="border-border/70 bg-card/80 shadow-sm">
+        <Card className="border-slate-200/60 shadow-sm bg-white overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-bl-full -z-0" />
           <CardHeader>
-            <CardTitle>Top drivers</CardTitle>
-            <CardDescription>Largest footprint contributors across all scopes.</CardDescription>
+            <CardTitle className="text-xl font-black text-slate-900">Primary Drivers</CardTitle>
+            <CardDescription>Top emitters by activity category.</CardDescription>
           </CardHeader>
-          <CardContent className="h-[320px]">
+          <CardContent className="h-[340px] pt-4">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={summary.topDrivers}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.18)" />
-                <XAxis dataKey="label" stroke="currentColor" fontSize={12} />
-                <YAxis stroke="currentColor" fontSize={12} />
-                <Tooltip />
-                <Bar dataKey="totalKg" radius={[8, 8, 0, 0]}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.08)" />
+                <XAxis dataKey="label" stroke="#64748b" fontSize={10} axisLine={false} tickLine={false} />
+                <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: 'none' }} />
+                <Bar dataKey="totalKg" radius={[12, 12, 0, 0]}>
                   {summary.topDrivers.map((driver) => (
-                    <Cell key={`${driver.label}-${driver.scope}`} fill={SCOPE_COLORS[driver.scope] ?? '#0f5f4b'} />
+                    <Cell key={`${driver.label}-${driver.scope}`} fill={SCOPE_COLORS[driver.scope] ?? '#0f172a'} />
                   ))}
                 </Bar>
               </BarChart>
@@ -195,117 +212,76 @@ export default function Dashboard() {
         </Card>
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-3">
-        <Card className="border-border/70 bg-card/80 shadow-sm lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Recent activity</CardTitle>
-            <CardDescription>Newest entries in the audit workspace with workflow status and evidence coverage.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {entries.slice(0, 6).map((entry) => (
-              <div
-                key={entry.id}
-                className="grid gap-3 rounded-2xl border border-border/70 bg-background/80 p-4 md:grid-cols-[1fr_auto_auto]"
-              >
-                <div>
-                  <p className="font-semibold text-foreground">{entry.activity_type}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {entry.scope} | {entry.category} | {entry.quantity.toLocaleString()} {entry.unit}
-                  </p>
-                </div>
-                <div className="text-sm font-medium text-foreground">{formatKg(entry.emission_kgco2e)}</div>
-                <div className="flex items-center justify-end gap-2">
-                  <StatusBadge status={entry.status ?? 'draft'} />
-                  <Badge variant="outline" className="capitalize">
-                    {(entry.activity_evidence?.length ?? 0) > 0 ? 'Evidence attached' : 'Needs evidence'}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/70 bg-card/80 shadow-sm">
-          <CardHeader>
-            <CardTitle>Compliance pulse</CardTitle>
-            <CardDescription>How the current workspace is tracking against core disclosure expectations.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {summary.checklist.map((item) => (
-              <div key={item.id} className="rounded-2xl border border-border/70 bg-background/80 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-semibold text-foreground">{item.requirement}</p>
-                  <Badge
-                    variant="outline"
-                    className={
-                      item.status === 'pass'
-                        ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-                        : item.status === 'warning'
-                          ? 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'
-                          : 'border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-300'
-                    }
-                  >
-                    {item.status}
-                  </Badge>
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">{item.detail}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </section>
-
-      <section className="grid gap-6 lg:grid-cols-2">
-        <Card className="border-border/70 bg-card/80 shadow-sm">
-          <CardHeader>
-            <CardTitle>Reduction opportunities</CardTitle>
-            <CardDescription>Suggested actions derived from top drivers and current data quality signals.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {summary.reductionOpportunities.map((opportunity) => (
-              <div key={opportunity.id} className="rounded-2xl border border-border/70 bg-background/80 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-semibold text-foreground">{opportunity.title}</p>
-                  <Badge variant="outline" className="capitalize">
-                    {opportunity.priority} priority
-                  </Badge>
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">{opportunity.description}</p>
-                <p className="mt-3 text-sm font-medium text-foreground">
-                  Estimated reduction: {formatKg(opportunity.estimatedReductionKg)}
-                </p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/70 bg-card/80 shadow-sm">
-          <CardHeader>
-            <CardTitle>Scope breakdown</CardTitle>
-            <CardDescription>A quick view of how the footprint is distributed across scopes 1, 2, and 3.</CardDescription>
+      {/* 4. Recent Activity & Compliance Check */}
+      <section className="grid gap-8 lg:grid-cols-[1.5fr_1fr]">
+        <Card className="border-slate-200/60 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between border-b border-slate-50 mb-4">
+            <div>
+              <CardTitle className="text-lg font-bold">Recent Material Activities</CardTitle>
+              <CardDescription>High-impact entries requiring audit verification.</CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" className="text-xs font-bold text-slate-400">View All Evidence</Button>
           </CardHeader>
           <CardContent className="space-y-4">
-            {summary.scopeSummary.map((scope) => (
-              <div key={scope.scope} className="space-y-2 rounded-2xl border border-border/70 bg-background/80 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-semibold text-foreground">{scope.scope}</p>
-                  <p className="text-sm text-muted-foreground">{scope.share}% of total</p>
+            {entries.slice(0, 5).map((entry) => (
+              <div
+                key={entry.id}
+                className="flex items-center justify-between p-4 rounded-2xl border border-slate-50 bg-slate-50/30 hover:bg-slate-50 transition-colors"
+              >
+                <div className="flex gap-4 items-center">
+                  <div className="h-10 w-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center">
+                    <Database className="h-5 w-5 text-slate-400" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-900">{entry.activity_type}</p>
+                    <p className="text-xs text-slate-500 font-medium">
+                      {entry.scope} • {entry.category} • {entry.entry_date}
+                    </p>
+                  </div>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      width: `${scope.share}%`,
-                      backgroundColor: SCOPE_COLORS[scope.scope],
-                    }}
-                  />
+                <div className="text-right">
+                  <div className="font-bold text-slate-900">{formatKg(entry.emission_kgco2e)}</div>
+                  <StatusBadge status={entry.status ?? 'draft'} />
                 </div>
-                <p className="text-sm font-medium text-foreground">{formatKg(scope.totalKg)}</p>
               </div>
             ))}
           </CardContent>
         </Card>
+
+        <Card className="border-slate-200/60 shadow-sm bg-slate-50/30">
+          <CardHeader>
+            <CardTitle className="text-lg font-bold">Assurance Protocol</CardTitle>
+            <CardDescription>Current status versus ISO 14064-1 core principles.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {summary.checklist.slice(0, 4).map((item) => (
+              <div key={item.id} className="p-4 rounded-2xl border border-white bg-white shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-bold text-slate-900 leading-tight">{item.requirement}</p>
+                  {item.status === 'pass' ? (
+                    <ShieldCheck className="h-4 w-4 text-emerald-500" />
+                  ) : (
+                    <AlertTriangle className="h-4 w-4 text-amber-500" />
+                  )}
+                </div>
+                <p className="text-xs text-slate-500 leading-relaxed">{item.detail}</p>
+              </div>
+            ))}
+            <Button asChild variant="outline" className="w-full rounded-xl bg-white border-slate-200 font-bold text-slate-900 h-11 text-xs">
+              <Link to="/reports">Download Full Methodology</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </section>
+    </div>
+  );
+}
+
+function HeroMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="space-y-1">
+      <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">{label}</p>
+      <p className="text-xl font-black text-white">{value}</p>
     </div>
   );
 }

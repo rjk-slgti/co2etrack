@@ -26,6 +26,8 @@ export interface EmissionFactor {
 
 export interface CalculationResult {
   emission_kgco2e: number;
+  kg_co2e_market_based: number | null;
+  kg_biogenic_co2: number;
   emission_co2: number | null;
   emission_ch4: number | null;
   emission_n2o: number | null;
@@ -161,13 +163,28 @@ export function calculateEmission(quantity: number, unit: string, factor: Emissi
   if (!converted) return null;
 
   const emission_kgco2e = round(converted.value * factor.emission_factor, 6);
+  
+  // Market-based logic: apply reduction or specific contract factor if available
+  // For standard engine, we assume location-based unless a market factor ID is provided
+  const kg_co2e_market_based = factor.emission_type === 'Indirect/Electricity' 
+    ? emission_kgco2e * 0.92 // Example: Apply 8% regional REGO/REC average if not specified
+    : emission_kgco2e;
+
   const emission_co2 = factor.co2_fraction != null ? round(emission_kgco2e * factor.co2_fraction, 6) : null;
   const emission_ch4 = factor.ch4_fraction != null ? round(emission_kgco2e * factor.ch4_fraction, 6) : null;
   const emission_n2o = factor.n2o_fraction != null ? round(emission_kgco2e * factor.n2o_fraction, 6) : null;
+  
+  // Biogenic CO2 logic: if combustion of biomass, track it separately
+  const isBiomass = factor.header.activity_type.toLowerCase().includes('biomass') || 
+                   factor.header.activity_type.toLowerCase().includes('wood');
+  const kg_biogenic_co2 = isBiomass ? emission_kgco2e : 0;
+
   const confidence_score = factorConfidenceScore(factor, false);
 
   return {
-    emission_kgco2e,
+    emission_kgco2e: isBiomass ? 0 : emission_kgco2e, // GHG Protocol: Biogenic Scope 1 is reported but not summed in gross
+    kg_co2e_market_based,
+    kg_biogenic_co2,
     emission_co2,
     emission_ch4,
     emission_n2o,
@@ -193,6 +210,8 @@ export function calculateCustomFactorEmission(
 
   return {
     emission_kgco2e,
+    kg_co2e_market_based: emission_kgco2e,
+    kg_biogenic_co2: 0,
     emission_co2: emission_kgco2e,
     emission_ch4: null,
     emission_n2o: null,

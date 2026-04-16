@@ -304,8 +304,17 @@ export function buildComplianceChecklist(entries: ActivityEntryRecord[]): Compli
   ];
 }
 
-export function buildWorkspaceSummary(entries: ActivityEntryRecord[]): WorkspaceSummary {
+export function buildWorkspaceSummary(
+  entries: ActivityEntryRecord[],
+  organization?: { fte_count: number; revenue_usd: number; floor_area_sqm: number }
+): WorkspaceSummary {
   const totalKg = entries.reduce((sum, entry) => sum + safeNumber(entry.emission_kgco2e), 0);
+  const totalBiogenicKg = entries.reduce((sum, entry) => sum + safeNumber(entry.kg_biogenic_co2), 0);
+  const marketBasedKg = entries.reduce((sum, entry) => {
+    // If specific market-based field is empty, fallback to location-based
+    return sum + safeNumber(entry.kg_co2e_market_based ?? entry.emission_kgco2e);
+  }, 0);
+
   const verifiedEntries = entries.filter((entry) => entry.status === 'verified').length;
   const evidenceCoverage =
     entries.length === 0
@@ -332,11 +341,27 @@ export function buildWorkspaceSummary(entries: ActivityEntryRecord[]): Workspace
     return counts;
   }, {});
 
+  // Intensity Metrics
+  const fte = organization?.fte_count ?? 1;
+  const revenue = organization?.revenue_usd ?? 1;
+  const area = organization?.floor_area_sqm ?? 1;
+
+  const intensity: IntensityMetrics = {
+    fte_count: fte,
+    revenue_usd: revenue,
+    floor_area_sqm: area,
+    intensity_revenue: round(totalKg / Math.max(revenue, 1), 4),
+    intensity_fte: round(totalKg / Math.max(fte, 1), 2),
+  };
+
   return {
     totalKg: round(totalKg, 2),
+    totalBiogenicKg: round(totalBiogenicKg, 2),
+    marketBasedKg: round(marketBasedKg, 2),
     qualityScore,
     evidenceCoverage,
     verifiedShare: entries.length === 0 ? 0 : round((verifiedEntries / entries.length) * 100, 1),
+    intensity,
     scopeSummary: buildScopeSummary(entries),
     topDrivers: buildTopDrivers(entries),
     monthlyTrend: buildMonthlyTrend(entries),

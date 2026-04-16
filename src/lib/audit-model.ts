@@ -28,6 +28,7 @@ export interface ActivityEntryRecord {
   id: string;
   organization_id: string;
   reporting_period_id?: string | null;
+  audit_project_id?: string | null;
   user_id?: string;
   scope: ScopeName;
   scope_category?: string | null;
@@ -40,6 +41,8 @@ export interface ActivityEntryRecord {
   factor_id?: string | null;
   factor_value_id?: string | null;
   emission_kgco2e: number;
+  kg_co2e_market_based?: number | null;
+  kg_biogenic_co2?: number | null;
   emission_co2?: number | null;
   emission_ch4?: number | null;
   emission_n2o?: number | null;
@@ -49,18 +52,50 @@ export interface ActivityEntryRecord {
   is_assumed_factor?: boolean | null;
   notes?: string | null;
   status?: EntryStatus;
-  validation_status?: string | null;
-  approval_status?: string | null;
+  validation_status?: 'pending' | 'under_review' | 'validated' | 'rejected';
+  approval_status?: 'not_required' | 'pending' | 'approved' | 'rejected';
   source_channel?: string | null;
   source_document_ref?: string | null;
   confidence_score?: number | null;
+  uncertainty_score?: number | null;
   site_name?: string | null;
   supplier_name?: string | null;
   entry_date: string;
+  activity_month?: string | null;
   created_at?: string;
   updated_at?: string;
   emission_factor_headers?: FactorHeaderRecord | null;
   activity_evidence?: EvidenceRecord[];
+}
+
+export interface AuditProject {
+  id: string;
+  organization_id: string;
+  name: string;
+  status: 'planning' | 'data_collection' | 'validation' | 'verification' | 'reported' | 'closed';
+  boundary_approach: string;
+  target_close_date?: string;
+  created_at: string;
+}
+
+export interface AuditFinding {
+  id: string;
+  audit_project_id: string;
+  activity_entry_id?: string | null;
+  finding_type: 'anomaly' | 'data_gap' | 'control' | 'recommendation';
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  title: string;
+  description: string;
+  recommendation?: string;
+  status: 'open' | 'in_review' | 'resolved';
+}
+
+export interface IntensityMetrics {
+  fte_count: number;
+  revenue_usd: number;
+  floor_area_sqm: number;
+  intensity_revenue: number;
+  intensity_fte: number;
 }
 
 export interface ScopeSummary {
@@ -105,7 +140,7 @@ export interface ComplianceChecklistItem {
   id: string;
   standard: string;
   requirement: string;
-  status: 'pass' | 'warning' | 'fail';
+  status: 'todo' | 'pass' | 'warning' | 'fail' | 'na';
   detail: string;
 }
 
@@ -118,9 +153,12 @@ export interface ForecastSummary {
 
 export interface WorkspaceSummary {
   totalKg: number;
+  totalBiogenicKg: number;
+  marketBasedKg: number;
   qualityScore: number;
   evidenceCoverage: number;
   verifiedShare: number;
+  intensity: IntensityMetrics;
   scopeSummary: ScopeSummary[];
   topDrivers: DriverBreakdown[];
   monthlyTrend: TrendPoint[];
