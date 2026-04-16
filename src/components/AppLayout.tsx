@@ -183,23 +183,24 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </aside>
 
-        <div className="flex flex-1 flex-col">
-          <header className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur-xl">
-            <div className="flex items-center gap-4 px-4 py-4 lg:px-8">
-              <Button type="button" variant="outline" size="icon" className="lg:hidden" onClick={() => setSidebarOpen(true)}>
+        <div className="flex flex-1 flex-col h-screen overflow-hidden">
+          <header className="sticky top-0 z-30 border-b border-border/60 bg-[#1e3a8a] text-white backdrop-blur-xl">
+            <div className="flex items-center gap-4 px-4 py-4 lg:px-12">
+              <Button type="button" variant="ghost" size="icon" className="lg:hidden text-white hover:bg-white/10" onClick={() => setSidebarOpen(true)}>
                 <Menu className="h-5 w-5" />
               </Button>
 
               <div>
-                <p className="text-[10px] uppercase font-black tracking-[0.22em] text-primary/60">GHG Protocol methodology</p>
-                <h1 className="text-base font-black tracking-tight text-slate-900">
+                <p className="text-[10px] uppercase font-black tracking-[0.22em] text-white/50">GHG Protocol methodology</p>
+                <h1 className="text-base font-black tracking-tight flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-emerald-400" />
                   SLGTI Carbon Auditing & Reporting Excellence
                 </h1>
               </div>
 
               <div className="ml-auto flex items-center gap-4">
-                <div className="hidden items-center gap-3 rounded-2xl border border-border/80 bg-white px-5 h-11 text-[10px] font-black uppercase tracking-widest text-slate-500 md:flex">
-                  <ShieldCheck className="h-4 w-4 text-emerald-500" />
+                <div className="hidden items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 h-11 text-[10px] font-black uppercase tracking-widest text-white/60 md:flex">
+                  <Compass className="h-4 w-4 text-emerald-400" />
                   {settings.boundaryApproach}
                 </div>
                 <ThemeToggle />
@@ -207,10 +208,21 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </div>
           </header>
 
-          <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8">{children}</main>
+          <main className="flex-1 overflow-y-auto bg-[#fafafa] relative overflow-x-hidden">
+            {/* 3D Book Binding Effect */}
+            <div className="absolute top-0 left-0 bottom-0 w-10 bg-gradient-to-r from-slate-300/40 via-white/50 to-transparent z-10 pointer-events-none" />
+            <div className="absolute top-0 left-10 bottom-0 w-[0.5px] bg-slate-300/30 z-10 pointer-events-none" />
+            
+            {/* Paper Texture Overlay */}
+            <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/p6.png')] z-0 grayscale" />
+
+            <div className="max-w-[920px] mx-auto px-12 py-16 relative z-10 min-h-full">
+              {children}
+            </div>
+            <AuditCopilot />
+          </main>
         </div>
       </div>
-      <AuditCopilot />
     </div>
   );
 }

@@ -65,11 +65,12 @@ export function buildReportHtml(payload: ReportPayload) {
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap');
         @page { size: A4; margin: 0; }
-        body { font-family: 'Inter', sans-serif; color: #1e293b; line-height: 1.5; margin: 0; padding: 0; -webkit-print-color-adjust: exact; }
+        .page { height: 297mm; width: 210mm; padding: 25mm; box-sizing: border-box; page-break-after: always; position: relative; overflow: hidden; background: #fff; box-shadow: inset 5px 0 15px -5px rgba(0,0,0,0.1); }
         
-        .page { height: 297mm; width: 210mm; padding: 25mm; box-sizing: border-box; page-break-after: always; position: relative; overflow: hidden; }
-        
-        .cover { background: #0f172a; color: white; border-left: 25px solid ${settings.brandPrimary}; }
+        .binding-strip { position: absolute; left: 0; top: 0; bottom: 0; width: 20px; background: linear-gradient(to right, #0a0f1d, #1e3a8a, transparent); opacity: 0.9; z-index: 100; }
+        .page-texture { position: absolute; inset: 0; opacity: 0.02; pointer-events: none; background: url('https://www.transparenttextures.com/patterns/p6.png'); z-index: 1; }
+
+        .cover { background: #1e3a8a; color: white; }
         .cover .brand { margin-top: 100mm; }
         .cover h1 { font-size: 56px; font-weight: 900; line-height: 0.9; letter-spacing: -0.05em; margin-bottom: 20px; }
         .cover .org { font-size: 24px; color: #94a3b8; font-weight: 500; }
@@ -109,12 +110,14 @@ export function buildReportHtml(payload: ReportPayload) {
 </head>
 <body>
     <div class="page cover">
+        <div class="binding-strip"></div>
+        <div class="page-texture"></div>
         <div class="brand">
             <h1>${escapeXml(settings.reportTitle)}</h1>
             <div class="org">${escapeXml(settings.organizationName)} | GHG Inventory Report</div>
         </div>
         <div class="footer">
-            <div style="font-size: 11px; font-weight: 600; color: #64748b;">
+            <div style="font-size: 11px; font-weight: 600; color: #94a3b8;">
                 <div>Standard: ${escapeXml(settings.primaryStandard)}</div>
                 <div>Boundary: ${escapeXml(settings.boundaryApproach ?? 'Operational Control')}</div>
                 <div>Issued: ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
@@ -124,6 +127,8 @@ export function buildReportHtml(payload: ReportPayload) {
     </div>
 
     <div class="page toc">
+        <div class="binding-strip"></div>
+        <div class="page-texture"></div>
         <h2>Table of Contents</h2>
         <div class="toc-item"><span>01 Executive Disclosure</span><span class="page-num">03</span></div>
         <div class="toc-item"><span>02 Organizational Boundaries</span><span class="page-num">04</span></div>
@@ -134,6 +139,8 @@ export function buildReportHtml(payload: ReportPayload) {
     </div>
 
     <div class="page">
+        <div class="binding-strip"></div>
+        <div class="page-texture"></div>
         <div class="chapter-header">
             <div class="chapter-num">Chapter 01</div>
             <h2>Executive Disclosure</h2>
@@ -169,6 +176,8 @@ export function buildReportHtml(payload: ReportPayload) {
     </div>
 
     <div class="page">
+        <div class="binding-strip"></div>
+        <div class="page-texture"></div>
         <div class="chapter-header">
             <div class="chapter-num">Chapter 04</div>
             <h2>Facility Intensity & Benchmarking</h2>
@@ -211,6 +220,8 @@ export function buildReportHtml(payload: ReportPayload) {
     </div>
 
     <div class="page">
+        <div class="binding-strip"></div>
+        <div class="page-texture"></div>
         <div class="chapter-header">
             <div class="chapter-num">Chapter 05</div>
             <h2>Methodology, GWP & AR6 Compliance</h2>
@@ -243,6 +254,8 @@ export function buildReportHtml(payload: ReportPayload) {
     </div>
 
     <div class="page">
+        <div class="binding-strip"></div>
+        <div class="page-texture"></div>
         <div class="chapter-header">
             <div class="chapter-num">Chapter 06</div>
             <h2>Assurance & Sign-off</h2>

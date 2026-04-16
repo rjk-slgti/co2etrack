@@ -9,6 +9,9 @@ import {
   Sparkles,
   Upload,
   Wand2,
+  Info,
+  BookOpen,
+  ArrowRight
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,6 +23,12 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipProvider, 
+  TooltipTrigger 
+} from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { useActivityEntries, useCreateActivityEntry } from '@/hooks/useActivityEntries';
 import { useCustomFactors, useCreateCustomFactor } from '@/hooks/useCustomFactors';
@@ -417,7 +426,23 @@ export default function DataEntry() {
       </section>
 
       <TabsContent value="single" className="mt-0">
-        <section className="grid gap-6 xl:grid-cols-[1.35fr_0.9fr]">
+        <TooltipProvider delayDuration={100}>
+          <div className="bg-[#1e3a8a]/5 border border-[#1e3a8a]/10 rounded-[32px] p-6 mb-8 flex flex-col md:flex-row items-center gap-6 group hover:bg-[#1e3a8a]/10 transition-all border-l-4 border-l-[#b45309]">
+            <div className="h-12 w-12 rounded-2xl bg-white shadow-lg flex items-center justify-center shrink-0">
+              <BookOpen className="h-6 w-6 text-[#1e3a8a]" />
+            </div>
+            <div className="space-y-1 flex-1">
+               <h4 className="text-lg font-black text-slate-900 leading-tight flex items-center gap-2">
+                 Phase 03: Performance Data Acquisition
+                 <Badge variant="outline" className="h-5 rounded-full border-emerald-200 bg-emerald-50 text-emerald-700 text-[8px] font-black uppercase tracking-widest">Active Audit</Badge>
+               </h4>
+               <p className="text-[11px] font-medium text-slate-500 italic leading-relaxed">
+                 "Pro-tip for Freshers: Ensure activity quantities match your primary evidence (utility bills/fuel slips). Accurate Step 03 data is the foundation of 100% audit assurance."
+               </p>
+            </div>
+          </div>
+
+          <section className="grid gap-6 xl:grid-cols-[1.35fr_0.9fr]">
           <div className="space-y-6">
             <WizardSection
               step="01"
@@ -1052,10 +1077,38 @@ function WizardSection({
   );
 }
 
+const SMART_HINTS: Record<string, string> = {
+  'Organization': 'The legal entity responsible for the emissions. Standard requirement for boundary definition.',
+  'Reporting Period': 'Ensures the inventory covers a consistent 12-month period for external disclosure.',
+  'Operational Site': 'Specific location of activity. Vital for SLGTI facility-level benchmarking.',
+  'GHG Scope': 'Mandatory categorization: S1 (Direct), S2 (Energy), S3 (Supply Chain).',
+  'Emission Category': 'Standardized activity group. Essential for sector-level analytics.',
+  'Activity Description': 'The specific source (e.g., Diesel Gen). Maps to specific emission factors.',
+  'Quantity': 'Amount of physical activity. Combined with factors to produce tCO2e.',
+  'Unit of Measure': 'Standardization is key. Use metric units (Liters, kWh, kg) wherever possible.',
+};
+
 function Field({ label, children }: { label: string; children: ReactNode }) {
+  const hint = SMART_HINTS[label];
+
   return (
     <div className="space-y-2">
-      <Label>{label}</Label>
+      <div className="flex items-center gap-2 mb-1.5 ml-1">
+        <Label className="text-sm font-bold text-slate-900">{label}</Label>
+        {hint && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="h-4 w-4 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center cursor-help group hover:border-[#1e3a8a]/30 transition-colors">
+                <Info className="h-2.5 w-2.5 text-slate-400 group-hover:text-[#1e3a8a]" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-[240px] p-3 rounded-xl bg-slate-900 text-white border-none shadow-2xl">
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#b45309] mb-1">Smart Guidance</p>
+              <p className="text-[10px] font-medium leading-relaxed">{hint}</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
+      </div>
       {children}
     </div>
   );

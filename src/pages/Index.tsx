@@ -42,6 +42,7 @@ import { formatKg } from '@/lib/audit-analytics';
 import { calculateBuildingIntensity } from '@/lib/calculation-engine';
 import { SCOPE_COLORS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
+import AuditMissionControl from '@/components/AuditMissionControl';
 
 export default function Dashboard() {
   const { summary, isLoading } = useAuditWorkspace();
@@ -71,47 +72,23 @@ export default function Dashboard() {
   ) as any;
 
   return (
-    <div className="space-y-10 pb-20">
-      {/* 13-Step Methodology Progression */}
-      <section className="relative overflow-hidden rounded-[40px] bg-slate-900 p-10 text-white shadow-2xl border border-white/10">
-        <div className="absolute top-0 right-0 h-64 w-64 bg-primary/20 blur-[100px]" />
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-10">
-          <div className="space-y-4 max-w-xl">
-            <div className="flex items-center gap-3">
-              <Badge className="bg-primary text-white border-none py-1 px-4 rounded-full font-black text-[10px] tracking-widest uppercase shadow-lg shadow-primary/20">
-                Methodology: GHG Protocol
-              </Badge>
-              <div className="h-1 w-1 rounded-full bg-white/20" />
-              <Badge variant="outline" className="text-white/40 border-white/10 rounded-full font-bold">Standard: ISO 14064-1</Badge>
-            </div>
-            
-            <h1 className="text-4xl font-black tracking-tighter lg:text-5xl leading-[1.1]">
-              Inventory <br /> Progression <span className="text-primary tracking-widest">Studio</span>
-            </h1>
-            <p className="text-slate-400 font-medium text-lg leading-relaxed">
-              Your carbon footprint is being strictly calculated using the 13-step methodology. 
-              Currently validating <span className="text-white font-black underline decoration-primary lg:text-2xl">Step 09: Assurance Check</span>.
-            </p>
-          </div>
-          
-          <div className="flex-1 w-full max-w-2xl bg-white/5 rounded-[32px] p-8 border border-white/10 backdrop-blur-md">
-             <div className="flex items-center justify-between mb-6">
-                <span className="text-xs font-black uppercase tracking-[0.3em] text-white/40">Audit Completion</span>
-                <span className="text-2xl font-black text-primary italic">68%</span>
-             </div>
-             <Progress value={68} className="h-3 bg-white/10 rounded-full mb-8 overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-primary to-secondary" />
-             </Progress>
-             
-             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <MethodologyStep label="Define Boundary" status="complete" step="01" />
-                <MethodologyStep label="Factoring" status="complete" step="04" />
-                <MethodologyStep label="Calculation" status="active" step="05" />
-                <MethodologyStep label="Report" status="pending" step="10" />
-             </div>
-          </div>
-        </div>
+    <div className="space-y-12 pb-20">
+      {/* 1. Methodology & Mission Control Layer */}
+      <section className="animate-in fade-in slide-in-from-top-4 duration-1000">
+        <AuditMissionControl />
       </section>
+
+      {/* 2. Intelligence & Adaptive Insight Layer - (Handled globaly but signals integrated here) */}
+      
+      {/* 3. Primary Impact & Normalized Performance Layer */}
+      <section className="grid gap-8 lg:grid-cols-4">
+         <MetricCard 
+           label="Total Footprint" 
+           value={formatKg(summary.totalKg)} 
+           detail="Consolidated Emissions"
+           icon={<Globe className="h-6 w-6 text-white" />}
+           color="bg-[#1e3a8a]"
+         />
 
       {/* Building-Type Analytics (Smart, Industrial, etc.) */}
       <div className="grid gap-8 lg:grid-cols-4">
