@@ -2,18 +2,19 @@
   "name": "co2etrack-monorepo",
   "private": true,
   "version": "1.0.0",
+  "packageManager": "npm@10.9.3",
   "description": "High-fidelity CCUS Traceability Platform for C44DEV SA",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "dev": "turbo run dev",
+    "dev": "turbo run dev --filter=web --",
     "build": "turbo run build",
     "lint": "turbo run lint",
-    "web:dev": "npm run dev --workspace=@co2e/web",
+    "web:dev": "npm run dev --workspace=web",
     "api:dev": "cd apps/api && .venv/Scripts/python -m uvicorn main:app --reload",
-    "marketing:dev": "npm run dev --workspace=@co2e/marketing",
+    "marketing:dev": "npm run dev --workspace=marketing",
     "test": "turbo run test"
   },
   "devDependencies": {
