@@ -780,8 +780,15 @@ export default function DataEntry() {
                 title="Upload PDF evidence"
                 detail="Machine-readable PDFs allow the Copilot to extract billing values 70% faster."
               />
-            </CardContent>
-          </Card>
+            <CardContent className="p-8 space-y-6">
+              <SuggestionCard
+                title="Consolidate by Site"
+                detail="Recording activity by site (HQ vs Plant) allows for more granular intensity normalization."
+              />
+              <SuggestionCard
+                title="Upload PDF evidence"
+                detail="Machine-readable PDFs allow the Copilot to extract billing values 70% faster."
+              />
               <SuggestionCard
                 title="Prefer supplier-specific factors for material categories"
                 detail="If supplier EPDs or metered studies exist, store them as custom factors to replace proxy assumptions."
