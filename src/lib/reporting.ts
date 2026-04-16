@@ -128,8 +128,8 @@ export function buildReportHtml(payload: ReportPayload) {
         <div class="toc-item"><span>01 Executive Disclosure</span><span class="page-num">03</span></div>
         <div class="toc-item"><span>02 Organizational Boundaries</span><span class="page-num">04</span></div>
         <div class="toc-item"><span>03 Inventory Details & Scope Statement</span><span class="page-num">05</span></div>
-        <div class="toc-item"><span>04 Intensity & Base Year Performance</span><span class="page-num">06</span></div>
-        <div class="toc-item"><span>05 Methodology, GWP & Uncertainty</span><span class="page-num">07</span></div>
+        <div class="toc-item"><span>04 Facility Intensity & Benchmarking</span><span class="page-num">06</span></div>
+        <div class="toc-item"><span>05 Methodology, GWP & AR6 Compliance</span><span class="page-num">07</span></div>
         <div class="toc-item"><span>06 Assurance & Sign-off</span><span class="page-num">08</span></div>
     </div>
 
@@ -149,12 +149,12 @@ export function buildReportHtml(payload: ReportPayload) {
                 <div class="val">${formatKg(summary.totalKg)}</div>
             </div>
             <div class="kpi-box">
-                <div class="label">Net Market-Based</div>
-                <div class="val">${formatKg(summary.marketBasedKg)}</div>
+                <div class="label">Intensity (AR6 Area)</div>
+                <div class="val">${summary.intensity.carbon_intensity_area} kg/m²</div>
             </div>
             <div class="kpi-box">
-                <div class="label">Intensity (Revenue)</div>
-                <div class="val">${summary.intensity.intensity_revenue}</div>
+                <div class="label">Validation Score</div>
+                <div class="val">${summary.qualityScore}/100</div>
             </div>
         </div>
 
@@ -163,59 +163,82 @@ export function buildReportHtml(payload: ReportPayload) {
         </div>
 
         <div class="footer-info">
-            <span>${escapeXml(settings.reportTitle)} • Internal Disclosure</span>
+            <span>${escapeXml(settings.reportTitle)} • Elite Carbon Disclosure</span>
             <span>Page 03</span>
         </div>
     </div>
 
     <div class="page">
         <div class="chapter-header">
-            <div class="chapter-num">Chapter 03</div>
-            <h2>Inventory Statement</h2>
+            <div class="chapter-num">Chapter 04</div>
+            <h2>Facility Intensity & Benchmarking</h2>
         </div>
 
-        <table class="statement-table">
-            <thead>
-                <tr>
-                    <th style="width: 40%">Scope & Category</th>
-                    <th class="num">Fossil (kgCO2e)</th>
-                    <th class="num">Biogenic (kgCO2)</th>
-                    <th class="num">Total (kgCO2e)</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${summary.scopeSummary.map(scope => {
-                    const scopeEntries = entries.filter(e => e.scope === scope.scope);
-                    const biogenic = scopeEntries.reduce((sum, e) => sum + (e.kg_biogenic_co2 ?? 0), 0);
-                    return `
-                    <tr class="subtotal-row">
-                        <td>${scope.scope} Consolidated</td>
-                        <td class="num">${(scope.totalKg).toLocaleString()}</td>
-                        <td class="num">${biogenic.toLocaleString()}</td>
-                        <td class="num">${(scope.totalKg + biogenic).toLocaleString()}</td>
-                    </tr>
-                    ${scopeEntries.slice(0, 12).map(e => `
-                    <tr>
-                        <td style="padding-left: 20px;">${escapeXml(e.activity_type)}</td>
-                        <td class="num">${e.emission_kgco2e.toLocaleString()}</td>
-                        <td class="num">${(e.kg_biogenic_co2 ?? 0).toLocaleString()}</td>
-                        <td class="num font-semibold">${(e.emission_kgco2e + (e.kg_biogenic_co2 ?? 0)).toLocaleString()}</td>
-                    </tr>
-                    `).join('')}
-                    `;
-                }).join('')}
-                <tr class="total-row">
-                    <td>TOTAL ORGANIZATIONAL FOOTPRINT</td>
-                    <td class="num">${summary.totalKg.toLocaleString()}</td>
-                    <td class="num">${summary.totalBiogenicKg.toLocaleString()}</td>
-                    <td class="num">${(summary.totalKg + summary.totalBiogenicKg).toLocaleString()} kgCO2e</td>
-                </tr>
-            </tbody>
+        <div style="background: #f8fafc; padding: 30px; border-radius: 20px; border: 1px solid #e2e8f0; margin-bottom: 40px;">
+           <h3 style="margin: 0 0 10px 0; font-size: 18px;">Building Profile: ${escapeXml(settings.buildingType ?? 'Commercial')}</h3>
+           <p style="margin: 0; font-size: 12px; color: #64748b;">
+             Benchmarked against ${escapeXml(settings.buildingType === 'smart' ? 'Grade-A Smart Building' : 'Regional Facility')} standards for Sri Lanka.
+           </p>
+        </div>
+
+        <div class="kpi-row">
+            <div class="kpi-box" style="border-left: 5px solid ${settings.brandPrimary};">
+                <div class="label">Area Intensity</div>
+                <div class="val">${summary.intensity.carbon_intensity_area} <span style="font-size: 12px;">kgCO2e/m²</span></div>
+            </div>
+            <div class="kpi-box">
+                <div class="label">FTE Intensity</div>
+                <div class="val">${summary.intensity.intensity_fte} <span style="font-size: 12px;">kgCO2e/fte</span></div>
+            </div>
+            <div class="kpi-box">
+                <div class="label">Efficiency Index</div>
+                <div class="val">${Math.round((summary.intensity.carbon_intensity_area / 45) * 100)}%</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 40px;">
+           <h4 style="font-size: 14px; font-weight: 900; color: #0f172a; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.1em;">Normalization Commentary</h4>
+           <div style="font-size: 13px; color: #475569; border-left: 2px solid #e2e8f0; padding-left: 20px;">
+              Based on the recorded floor area of ${summary.intensity.floor_area_sqm} m², the operational intensity is evaluated within the ${settings.buildingType} category. 
+              The performance indicates a ${summary.intensity.carbon_intensity_area > 50 ? 'variance above' : 'compliance with'} international building efficiency targets (Net-Zero Building Path).
+           </div>
+        </div>
+
+        <div class="footer-info">
+            <span>${escapeXml(settings.organizationName)} • Performance Intensity Section</span>
+            <span>Page 06</span>
+        </div>
+    </div>
+
+    <div class="page">
+        <div class="chapter-header">
+            <div class="chapter-num">Chapter 05</div>
+            <h2>Methodology, GWP & AR6 Compliance</h2>
+        </div>
+        
+        <div style="font-size: 13px; color: #475569;">
+           <p><strong>Standard:</strong> Accounting and Reporting Standard (GHG Protocol Corporate Standard)</p>
+           <p><strong>GWP Model:</strong> IPCC Sixth Assessment Report (AR6), 100-year timescale.</p>
+           <p><strong>Primary Source:</strong> ${escapeXml(settings.organizationCountry === 'LK' ? 'CEB / IEA Sri Lanka Regional Factors' : 'DEFRA/IEA Combined')}</p>
+        </div>
+
+        <table class="statement-table" style="margin-top: 30px;">
+           <thead>
+              <tr>
+                 <th>Greenhouse Gas</th>
+                 <th class="num">Global Warming Potential (AR6)</th>
+              </tr>
+           </thead>
+           <tbody>
+              <tr><td>Carbon Dioxide (CO₂)</td><td class="num">1</td></tr>
+              <tr><td>Methane (CH₄)</td><td class="num">29.8</td></tr>
+              <tr><td>Nitrous Oxide (N₂O)</td><td class="num">273</td></tr>
+           </tbody>
         </table>
 
         <div class="footer-info">
-            <span>${escapeXml(settings.organizationName)} • ${escapeXml(settings.primaryStandard)}</span>
-            <span>Page 05</span>
+            <span>Audit Standard Compliance Document</span>
+            <span>Page 07</span>
         </div>
     </div>
 

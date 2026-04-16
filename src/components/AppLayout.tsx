@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   BarChart3,
@@ -13,6 +13,11 @@ import {
   Sparkles,
   Wand2,
   X,
+  Compass,
+  Zap,
+  ShieldCheck,
+  Activity,
+  Target
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -20,25 +25,41 @@ import { useAuth } from '@/hooks/useAuth';
 import { useWorkspaceSettings } from '@/hooks/useWorkspaceSettings';
 import { cn } from '@/lib/utils';
 import AuditCopilot from '@/components/AuditCopilot';
+import OnboardingWizard from '@/components/OnboardingWizard';
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Command center', icon: BarChart3 },
-  { to: '/data-entry', label: 'Audit wizard', icon: Wand2 },
-  { to: '/auditor', label: 'Audit center', icon: ClipboardCheck },
-  { to: '/reports', label: 'Reports', icon: FileText },
-  { to: '/emission-factors', label: 'Factors', icon: Database },
-  { to: '/audit-log', label: 'Audit trail', icon: Shield },
-  { to: '/settings', label: 'Settings', icon: Settings },
+  { to: '/', label: 'Command center', icon: BarChart3, step: 'Dashboard' },
+  { to: '/data-entry', label: 'Emission capture', icon: Activity, step: 'Methodology 03' },
+  { to: '/auditor', label: 'Validation desk', icon: ShieldCheck, step: 'Methodology 09' },
+  { to: '/reports', label: 'Disclosures', icon: FileText, step: 'Methodology 10' },
+  { to: '/emission-factors', label: 'Factor engine', icon: Database, step: 'Methodology 04' },
+  { to: '/audit-log', label: 'Audit history', icon: Shield, step: 'Assurance' },
+  { to: '/settings', label: 'Configuration', icon: Settings, step: 'Boundary' },
 ];
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const location = useLocation();
   const { signOut, user } = useAuth();
   const { settings } = useWorkspaceSettings();
 
+  useEffect(() => {
+    // Show onboarding if organization name is default or boundary is not set
+    if (settings.organizationName === 'SLGTI - Northern Campus' && !localStorage.getItem('co2etrack-onboarded')) {
+       setShowOnboarding(true);
+    }
+  }, [settings.organizationName]);
+
+  const handleOnboardingComplete = () => {
+    localStorage.setItem('co2etrack-onboarded', 'true');
+    setShowOnboarding(false);
+  };
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(20,108,148,0.12),_transparent_35%),radial-gradient(circle_at_bottom_right,_rgba(15,95,75,0.18),_transparent_40%)]">
+      {showOnboarding && <OnboardingWizard onComplete={handleOnboardingComplete} />}
+      
       {sidebarOpen && (
         <button
           type="button"
@@ -61,7 +82,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <Leaf className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sidebar-foreground/60">
+                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-sidebar-foreground/60">
                   Carbon
                 </p>
                 <p className="text-xl font-black tracking-tight text-sidebar-foreground">Audit Studio</p>
@@ -78,20 +99,24 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </Button>
           </div>
 
-          <div className="mt-8 rounded-3xl border border-sidebar-border bg-white/5 p-4">
-            <div className="flex items-start justify-between gap-3">
+          <div className="mt-8 rounded-[32px] border border-sidebar-border bg-white/5 p-5 relative overflow-hidden group">
+            <div className="absolute -top-4 -right-4 h-16 w-16 bg-primary/20 blur-2xl group-hover:bg-primary/40 transition-colors" />
+            <div className="flex items-start justify-between gap-3 relative">
               <div>
-                <p className="text-xs uppercase tracking-[0.22em] text-sidebar-foreground/55">Active workspace</p>
-                <p className="mt-1 text-lg font-bold text-sidebar-foreground">{settings.organizationName}</p>
-                <p className="text-sm text-sidebar-foreground/65">
-                  {settings.primaryStandard} | {settings.gwpSet}
-                </p>
+                <p className="text-[10px] uppercase font-black tracking-[0.22em] text-sidebar-foreground/45">Organization</p>
+                <p className="mt-1 text-base font-black text-sidebar-foreground leading-tight">{settings.organizationName}</p>
+                <div className="mt-2 flex items-center gap-2">
+                   <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                   <p className="text-[10px] uppercase font-bold text-sidebar-foreground/65 tracking-widest">
+                     {settings.objective}
+                   </p>
+                </div>
               </div>
-              <Sparkles className="h-5 w-5 text-sidebar-foreground/45" />
+              <Compass className="h-5 w-5 text-primary opacity-40" />
             </div>
           </div>
 
-          <nav className="mt-8 space-y-2">
+          <nav className="mt-10 space-y-1">
             {NAV_ITEMS.map((item) => {
               const active = location.pathname === item.to;
               const Icon = item.icon;
@@ -102,33 +127,55 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   to={item.to}
                   onClick={() => setSidebarOpen(false)}
                   className={cn(
-                    'flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all',
+                    'flex items-center justify-between rounded-2xl px-4 py-3 h-12 transition-all',
                     active
-                      ? 'bg-white text-slate-950 shadow-sm'
+                      ? 'bg-slate-900 text-white shadow-xl shadow-slate-200/20'
                       : 'text-sidebar-foreground/72 hover:bg-white/10 hover:text-sidebar-foreground'
                   )}
                 >
-                  <Icon className="h-4 w-4" />
-                  <span>{item.label}</span>
+                  <div className="flex items-center gap-3">
+                    <Icon className="h-4 w-4" />
+                    <span className="text-sm font-bold tracking-tight">{item.label}</span>
+                  </div>
+                  {active && (
+                    <span className="text-[8px] font-black uppercase tracking-widest text-primary opacity-60">
+                      {item.step}
+                    </span>
+                  )}
                 </Link>
               );
             })}
           </nav>
 
-          <div className="mt-auto rounded-3xl border border-sidebar-border bg-white/5 p-4">
-            <p className="text-xs uppercase tracking-[0.22em] text-sidebar-foreground/55">Signed in</p>
-            <p className="mt-1 truncate text-sm font-medium text-sidebar-foreground">
-              {user?.email ?? 'demo@co2etrack.local'}
-            </p>
-            <Button
-              type="button"
-              variant="ghost"
-              className="mt-4 w-full justify-start rounded-2xl text-sidebar-foreground hover:bg-white/10 hover:text-sidebar-foreground"
-              onClick={signOut}
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign out
-            </Button>
+          <div className="mt-auto space-y-4">
+             <div className="rounded-2xl bg-gradient-to-br from-primary/10 to-transparent p-5 border border-primary/5">
+                <div className="flex items-center gap-3 mb-3">
+                   <Target className="h-4 w-4 text-primary" />
+                   <p className="text-[10px] font-black uppercase tracking-widest text-primary">Decarbonization</p>
+                </div>
+                <div className="space-y-1">
+                   <p className="text-xs font-bold text-sidebar-foreground">Reduction Pathway</p>
+                   <p className="text-[10px] text-sidebar-foreground/50 font-medium">Net-zero gap analysis live.</p>
+                </div>
+             </div>
+
+            <div className="rounded-3xl border border-sidebar-border bg-white/5 p-4 flex items-center justify-between">
+              <div className="truncate">
+                <p className="text-[8px] font-black uppercase tracking-[0.22em] text-sidebar-foreground/55">Auditor Identity</p>
+                <p className="truncate text-xs font-bold text-sidebar-foreground">
+                  {user?.email ?? 'demo@slgti.lk'}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-xl text-sidebar-foreground/40 hover:text-primary hover:bg-primary/5"
+                onClick={signOut}
+              >
+                <LogOut className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           </div>
         </aside>
 
@@ -140,14 +187,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
               </Button>
 
               <div>
-                <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Next-generation carbon auditing</p>
-                <h1 className="text-lg font-bold tracking-tight text-foreground">
-                  Fast, guided reporting for scopes 1, 2, and 3
+                <p className="text-[10px] uppercase font-black tracking-[0.22em] text-primary/60">GHG Protocol methodology</p>
+                <h1 className="text-base font-black tracking-tight text-slate-900">
+                  SLGTI Carbon Auditing & Reporting Excellence
                 </h1>
               </div>
 
-              <div className="ml-auto flex items-center gap-3">
-                <div className="hidden rounded-full border border-border/80 bg-card px-4 py-2 text-sm text-muted-foreground md:block">
+              <div className="ml-auto flex items-center gap-4">
+                <div className="hidden items-center gap-3 rounded-2xl border border-border/80 bg-white px-5 h-11 text-[10px] font-black uppercase tracking-widest text-slate-500 md:flex">
+                  <ShieldCheck className="h-4 w-4 text-emerald-500" />
                   {settings.boundaryApproach}
                 </div>
                 <ThemeToggle />

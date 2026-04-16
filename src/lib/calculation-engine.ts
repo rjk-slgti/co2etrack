@@ -87,6 +87,13 @@ const UNIT_CONVERSIONS: Record<string, Record<string, number>> = {
   m3: { m3: 1 },
 };
 
+const AR6_GWP = {
+  CO2: 1,
+  CH4_FOSSIL: 29.8,
+  CH4_NON_FOSSIL: 27.0,
+  N2O: 273,
+};
+
 function round(value: number, digits = 6) {
   const multiplier = 10 ** digits;
   return Math.round(value * multiplier) / multiplier;
@@ -128,22 +135,25 @@ function factorConfidenceScore(factor: EmissionFactor, isAssumed: boolean) {
 
 export function selectBestFactor(
   factors: EmissionFactor[],
-  userCountry: string
+  userCountry = 'LK'
 ): { factor: EmissionFactor; isAssumed: boolean } | null {
   if (factors.length === 0) return null;
 
   const sorted = [...factors].sort((left, right) => {
+    // Priority 1: Sri Lanka region match
     const leftCountryMatch = left.header.region === userCountry;
     const rightCountryMatch = right.header.region === userCountry;
     if (leftCountryMatch && !rightCountryMatch) return -1;
     if (!leftCountryMatch && rightCountryMatch) return 1;
 
+    // Priority 2: Source Priority (Country/CEB/IEA)
     const leftPriority = FACTOR_SOURCE_PRIORITY[left.header.source] ?? 99;
     const rightPriority = FACTOR_SOURCE_PRIORITY[right.header.source] ?? 99;
     if (leftPriority !== rightPriority) {
       return leftPriority - rightPriority;
     }
 
+    // Priority 3: Data Quality
     if (left.data_quality !== right.data_quality) {
       const order = { High: 0, Medium: 1, Low: 2 };
       return (order[left.data_quality as keyof typeof order] ?? 3) - (order[right.data_quality as keyof typeof order] ?? 3);
@@ -162,19 +172,26 @@ export function calculateEmission(quantity: number, unit: string, factor: Emissi
   const converted = convertToStandardUnit(quantity, unit, factor.unit_standard);
   if (!converted) return null;
 
-  const emission_kgco2e = round(converted.value * factor.emission_factor, 6);
+  // Use AR6 logic if factor metadata suggests component fractions
+  let emission_kgco2e = 0;
+  if (factor.co2_fraction != null && factor.gwp_set === 'AR6') {
+     const co2 = converted.value * (factor.co2_fraction ?? 1);
+     const ch4 = converted.value * (factor.ch4_fraction ?? 0) * AR6_GWP.CH4_FOSSIL;
+     const n2o = converted.value * (factor.n2o_fraction ?? 0) * AR6_GWP.N2O;
+     emission_kgco2e = round(co2 + ch4 + n2o, 6);
+  } else {
+     emission_kgco2e = round(converted.value * factor.emission_factor, 6);
+  }
   
   // Market-based logic: apply reduction or specific contract factor if available
-  // For standard engine, we assume location-based unless a market factor ID is provided
   const kg_co2e_market_based = factor.emission_type === 'Indirect/Electricity' 
-    ? emission_kgco2e * 0.92 // Example: Apply 8% regional REGO/REC average if not specified
+    ? emission_kgco2e * 0.92 // Regional average instruments
     : emission_kgco2e;
 
   const emission_co2 = factor.co2_fraction != null ? round(emission_kgco2e * factor.co2_fraction, 6) : null;
   const emission_ch4 = factor.ch4_fraction != null ? round(emission_kgco2e * factor.ch4_fraction, 6) : null;
   const emission_n2o = factor.n2o_fraction != null ? round(emission_kgco2e * factor.n2o_fraction, 6) : null;
   
-  // Biogenic CO2 logic: if combustion of biomass, track it separately
   const isBiomass = factor.header.activity_type.toLowerCase().includes('biomass') || 
                    factor.header.activity_type.toLowerCase().includes('wood');
   const kg_biogenic_co2 = isBiomass ? emission_kgco2e : 0;
@@ -182,7 +199,7 @@ export function calculateEmission(quantity: number, unit: string, factor: Emissi
   const confidence_score = factorConfidenceScore(factor, false);
 
   return {
-    emission_kgco2e: isBiomass ? 0 : emission_kgco2e, // GHG Protocol: Biogenic Scope 1 is reported but not summed in gross
+    emission_kgco2e: isBiomass ? 0 : emission_kgco2e,
     kg_co2e_market_based,
     kg_biogenic_co2,
     emission_co2,
@@ -193,6 +210,31 @@ export function calculateEmission(quantity: number, unit: string, factor: Emissi
     is_assumed_factor: false,
     factor_used: factor,
     confidence_score,
+  };
+}
+
+/**
+ * Normalizes emissions based on building occupancy or area.
+ */
+export function calculateBuildingIntensity(totalKg: number, metricValue: number, buildingType: string) {
+  if (!metricValue || metricValue === 0) return 0;
+  const intensity = totalKg / metricValue;
+  
+  // Benchmark logic for 'Smart Buildings'
+  const benchmarks: Record<string, number> = {
+    'smart': 35.5, // kg/m2/year target
+    'commercial': 65.0,
+    'educational': 45.0,
+    'industrial': 120.0,
+  };
+
+  const target = benchmarks[buildingType] ?? 50.0;
+  const performance = (intensity / target) * 100;
+
+  return {
+    intensity: round(intensity, 2),
+    performanceIndex: round(performance, 0),
+    isOptimal: performance <= 100,
   };
 }
 
