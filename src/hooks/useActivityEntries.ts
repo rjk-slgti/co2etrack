@@ -139,7 +139,7 @@ export function useUpdateActivityEntryWorkflow() {
   return useMutation({
     mutationFn: async (update: WorkflowUpdate) => {
       if (!hasSupabaseConfig) {
-        return MockDB.updateEntry(update.id, update);
+        return MockDB.updateEntry(update.id, update as Record<string, unknown>);
       }
 
       try {
@@ -162,7 +162,7 @@ export function useUpdateActivityEntryWorkflow() {
 
         return data;
       } catch {
-        return MockDB.updateEntry(update.id, update);
+        return MockDB.updateEntry(update.id, update as Record<string, unknown>);
       }
     },
     onSuccess: () => {

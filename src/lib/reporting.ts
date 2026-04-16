@@ -235,7 +235,7 @@ export function buildReportHtml(payload: ReportPayload) {
         <div class="signature-grid">
             <div>
                 <div class="sig-line">Prepared by (Internal Lead)</div>
-                <div style="font-size: 13px; font-weight: 900; margin-top: 10px;">${user?.email ?? 'Carbon Manager'}</div>
+                <div style="font-size: 13px; font-weight: 900; margin-top: 10px;">Carbon Manager</div>
             </div>
             <div>
                 <div class="sig-line">Approved for Disclosure (Board Level)</div>
