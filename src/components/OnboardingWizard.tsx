@@ -11,7 +11,7 @@ import {
   Factory,
   Home,
   CircuitBoard,
-  Business
+  Briefcase
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -166,7 +166,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                       <AssetCard 
                         id="commercial" 
                         name="Commercial Office" 
-                        icon={<Business className="h-6 w-6" />}
+                        icon={<Briefcase className="h-6 w-6" />}
                         selected={formData.buildingType === 'commercial'}
                         onClick={() => setFormData({...formData, buildingType: 'commercial'})}
                       />

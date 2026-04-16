@@ -39,7 +39,7 @@ import { useAuditWorkspace } from '@/hooks/useAuditWorkspace';
 import { useOrganizationCatalog } from '@/hooks/useOrganizationCatalog';
 import { useWorkspaceSettings } from '@/hooks/useWorkspaceSettings';
 import { formatKg } from '@/lib/audit-analytics';
-import { calculateBuildingIntensity } from './calculation-engine';
+import { calculateBuildingIntensity } from '@/lib/calculation-engine';
 import { SCOPE_COLORS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 
@@ -66,7 +66,7 @@ export default function Dashboard() {
 
   const buildingStats = calculateBuildingIntensity(
     summary.totalKg, 
-    settings.floor_area_sqm || 1000, 
+    (settings as any).floor_area_sqm || 1000, 
     settings.buildingType as any
   ) as any;
 
