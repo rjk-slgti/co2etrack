@@ -81,17 +81,8 @@ export default function Dashboard() {
       {/* 2. Intelligence & Adaptive Insight Layer - (Handled globaly but signals integrated here) */}
       
       {/* 3. Primary Impact & Normalized Performance Layer */}
-      <section className="grid gap-8 lg:grid-cols-4">
-         <MetricCard 
-           label="Total Footprint" 
-           value={formatKg(summary.totalKg)} 
-           detail="Consolidated Emissions"
-           icon={<Globe className="h-6 w-6 text-white" />}
-           color="bg-[#1e3a8a]"
-         />
-
-      {/* Building-Type Analytics (Smart, Industrial, etc.) */}
-      <div className="grid gap-8 lg:grid-cols-4">
+      <section className="space-y-8">
+        <div className="grid gap-8 lg:grid-cols-4">
          <MetricCard 
            label="Total Footprint" 
            value={formatKg(summary.totalKg)} 
@@ -122,9 +113,9 @@ export default function Dashboard() {
            color="bg-amber-500/5"
            trend="up"
          />
-      </div>
+        </div>
 
-      <div className="grid gap-10 lg:grid-cols-3">
+        <div className="grid gap-10 lg:grid-cols-3">
         {/* Scopes Distribution */}
         <Card className="lg:col-span-2 border-slate-200/60 shadow-2xl rounded-[48px] bg-white ring-1 ring-slate-100 overflow-hidden group">
           <CardHeader className="p-10 border-b border-slate-50 flex flex-row items-center justify-between">
@@ -223,7 +214,8 @@ export default function Dashboard() {
              </Button>
           </CardContent>
         </Card>
-      </div>
+        </div>
+      </section>
     </div>
   );
 }
