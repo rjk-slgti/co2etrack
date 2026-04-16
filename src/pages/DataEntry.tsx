@@ -941,6 +941,7 @@ export default function DataEntry() {
             </Card>
           </div>
         </section>
+        </TooltipProvider>
       </TabsContent>
 
       <TabsContent value="bulk" className="mt-0">
