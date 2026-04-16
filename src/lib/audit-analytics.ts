@@ -10,7 +10,6 @@ import type {
   SmartSignal,
   TrendPoint,
   WorkspaceSummary,
-  IntensityMetrics,
 } from './audit-model';
 import { calculateBuildingIntensity } from './calculation-engine';
 
@@ -357,8 +356,8 @@ export function buildWorkspaceSummary(
     intensity_revenue: round(totalKg / Math.max(revenue, 1), 4),
     intensity_fte: round(totalKg / Math.max(fte, 1), 2),
     carbon_intensity_area: round(totalKg / Math.max(area, 1), 2),
-    building_performance_index: buildingStats.intensity,
-    is_optimal: buildingStats.isOptimal
+    building_performance_index: typeof buildingStats === 'object' ? buildingStats.intensity : 0,
+    is_optimal: typeof buildingStats === 'object' ? buildingStats.isOptimal : false
   };
 
   return {
