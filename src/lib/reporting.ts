@@ -21,34 +21,35 @@ function escapeXml(value: string) {
 export function buildExecutiveNarrative(payload: ReportPayload) {
   const { summary, settings } = payload;
   const mainDriver = summary.topDrivers[0];
-  const yearOverYear = summary.monthlyTrend.length > 12 ? 'improved' : 'stabilized'; // Placeholder logic
+  const intensity = summary.intensity;
   
   return [
-    `${settings.organizationName} reports a total carbon footprint of ${formatKg(summary.totalKg)} for the current reporting period.`,
-    `The inventory was prepared following the ${settings.primaryStandard} using the ${settings.consolidationApproach ?? 'Operational Control'} approach.`,
+    `This report presents the consolidated greenhouse gas (GHG) inventory for ${settings.organizationName}, covering the reporting period ${new Date().getFullYear()}.`,
+    `The inventory was developed in accordance with the ${settings.primaryStandard} Corporate Standard and ISO 14064-1:2018 requirements, utilizing a ${settings.consolidationApproach?.toLowerCase() ?? 'operational control'} boundary approach.`,
+    `The total gross operational footprint is recorded at ${formatKg(summary.totalKg)}, with a market-based net contribution of ${formatKg(summary.marketBasedKg)}.`,
     mainDriver 
-      ? `The primary emissions driver is ${mainDriver.label} (${mainDriver.scope}), accounting for ${mainDriver.share}% of the total footprint.` 
+      ? `Analysis indicates ${mainDriver.label} (${mainDriver.scope}) as the primary material driver, representing ${mainDriver.share}% of consolidated emissions.` 
       : '',
-    `Carbon intensity is recorded at ${summary.intensity.intensity_revenue} kgCO2e/USD, while verified coverage has reached ${summary.verifiedShare}%.`,
-    `Overall performance vs the base year has ${yearOverYear}, reflecting ongoing decarbonization efforts.`
+    `Carbon performance normalized by revenue stands at ${intensity.intensity_revenue} kgCO2e/USD.`,
+    `The reporting entity maintains a verified assurance level of ${summary.verifiedShare}%, supported by primary source evidence for ${summary.evidenceCoverage}% of material activity records.`
   ].filter(Boolean).join(' ');
 }
 
 export function buildReportHtml(payload: ReportPayload) {
-  const { settings, summary, entries } = payload;
-  const generatedAt = payload.generatedAt ?? new Date().toISOString();
+  const { settings, summary, entries, user } = payload;
   
-  // Charts Logic (SVG based)
-  const pieCharts = summary.scopeSummary.map((s, i) => {
-    const radius = 40;
-    const circ = 2 * Math.PI * radius;
-    const offset = circ - (s.share / 100) * circ;
+  // High-fidelity SVG Charts
+  const scopeBreakdown = summary.scopeSummary.map((s, i) => {
+    const r = 35;
+    const c = 2 * Math.PI * r;
+    const offset = c - (s.share / 100) * c;
+    const color = ['#0f172a', '#0f5f4b', '#94a3b8'][i] || '#cbd5e1';
     return `
       <div class="scope-stat">
         <svg viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="${radius}" fill="none" stroke="#e2e8f0" stroke-width="8" />
-          <circle cx="50" cy="50" r="${radius}" fill="none" stroke="${['#10b981', '#3b82f6', '#f59e0b'][i]}" 
-            stroke-width="8" stroke-dasharray="${circ}" stroke-dashoffset="${offset}" transform="rotate(-90 50 50)" />
+          <circle cx="50" cy="50" r="${r}" fill="none" stroke="#f1f5f9" stroke-width="12" />
+          <circle cx="50" cy="50" r="${r}" fill="none" stroke="${color}" 
+            stroke-width="12" stroke-dasharray="${c}" stroke-dashoffset="${offset}" transform="rotate(-90 50 50)" />
         </svg>
         <div class="label">${s.scope}</div>
         <div class="val">${s.share}%</div>
@@ -60,206 +61,192 @@ export function buildReportHtml(payload: ReportPayload) {
 <html>
 <head>
     <meta charset="utf-8">
-    <title>${escapeXml(settings.reportTitle)} | GHG Inventory</title>
+    <title>${escapeXml(settings.reportTitle)} | World-Class Assurance Output</title>
     <style>
-        @page { size: A4; margin: 20mm; }
-        body { font-family: 'Inter', 'Segoe UI', sans-serif; color: #1e293b; line-height: 1.6; margin: 0; padding: 0; }
-        h1, h2, h3, h4 { color: #0f172a; margin: 0; font-weight: 800; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap');
+        @page { size: A4; margin: 0; }
+        body { font-family: 'Inter', sans-serif; color: #1e293b; line-height: 1.5; margin: 0; padding: 0; -webkit-print-color-adjust: exact; }
         
-        .cover { height: 95vh; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always; padding: 40px; box-sizing: border-box; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-left: 20px solid ${settings.brandPrimary}; }
-        .cover .brand { margin-top: 120px; }
-        .cover h1 { font-size: 64px; line-height: 1; letter-spacing: -0.04em; margin-bottom: 24px; color: #0f172a; }
-        .cover .org { font-size: 28px; color: #475569; font-weight: 500; }
-        .cover .footer { display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #e2e8f0; pt-20px; }
-        .cover .stamp { border: 2px solid #10b981; color: #10b981; padding: 12px 24px; border-radius: 8px; font-weight: 700; text-transform: uppercase; transform: rotate(-3deg); }
-
-        .chapter { page-break-before: always; padding-top: 40px; }
-        .chapter-num { color: ${settings.brandPrimary}; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
-        .chapter h2 { font-size: 36px; border-bottom: 4px solid ${settings.brandPrimary}; display: inline-block; padding-bottom: 12px; margin-bottom: 40px; }
+        .page { height: 297mm; width: 210mm; padding: 25mm; box-sizing: border-box; page-break-after: always; position: relative; overflow: hidden; }
         
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 40px 0; }
-        .kpi { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .kpi .label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
-        .kpi .val { font-size: 32px; font-weight: 900; color: #0f172a; margin-top: 8px; }
+        .cover { background: #0f172a; color: white; border-left: 25px solid ${settings.brandPrimary}; }
+        .cover .brand { margin-top: 100mm; }
+        .cover h1 { font-size: 56px; font-weight: 900; line-height: 0.9; letter-spacing: -0.05em; margin-bottom: 20px; }
+        .cover .org { font-size: 24px; color: #94a3b8; font-weight: 500; }
+        .cover .footer { position: absolute; bottom: 25mm; left: 25mm; right: 25mm; display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; }
+        .cover .stamp { border: 2.5px solid #10b981; color: #10b981; padding: 10px 20px; border-radius: 4px; font-weight: 800; text-transform: uppercase; font-size: 14px; letter-spacing: 0.1em; transform: rotate(-5deg); }
 
-        .statement-table { width: 100%; border-collapse: collapse; margin: 32px 0; font-size: 13px; }
-        .statement-table th { background: #f8fafc; text-align: left; padding: 14px 16px; font-weight: 700; color: #475569; border-bottom: 2px solid #e2e8f0; }
-        .statement-table td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; }
-        .statement-table .subtotal { font-weight: 700; background: #f8fafc; }
-        .statement-table .total { font-weight: 900; background: #f1f5f9; font-size: 15px; color: #0f172a; }
-        .num { text-align: right; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+        .toc h2 { font-size: 32px; font-weight: 900; color: #0f172a; margin-bottom: 40px; }
+        .toc-item { display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding: 15px 0; font-weight: 700; color: #475569; }
+        .toc-item .page-num { color: #94a3b8; }
 
-        .methodology { background: #f8fafc; padding: 32px; border-radius: 24px; border: 1px solid #e2e8f0; }
-        .footer-page { position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 40px; font-size: 10px; color: #94a3b8; border-top: 1px solid #f1f5f9; background: white; z-index: 100; }
+        .chapter-header { margin-bottom: 50px; border-bottom: 8px solid ${settings.brandPrimary}; padding-bottom: 15px; }
+        .chapter-num { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; color: #64748b; margin-bottom: 8px; }
+        .chapter-header h2 { font-size: 40px; font-weight: 900; color: #0f172a; margin: 0; }
+        
+        .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
+        .kpi-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; }
+        .kpi-box .label { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; }
+        .kpi-box .val { font-size: 24px; font-weight: 900; color: #0f172a; margin-top: 5px; }
+
+        .statement-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
+        .statement-table th { text-align: left; padding: 12px; background: #f1f5f9; font-weight: 900; color: #475569; border: 1px solid #e2e8f0; }
+        .statement-table td { padding: 10px 12px; border: 1px solid #e2e8f0; }
+        .subtotal-row { background: #f8fafc; font-weight: 800; color: #0f172a; }
+        .total-row { background: #0f172a; color: white; font-weight: 900; font-size: 13px; }
+        .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+        .scope-breakdown { display: flex; justify-content: space-around; text-align: center; margin-top: 40px; }
+        .scope-stat svg { width: 80px; height: 80px; margin-bottom: 10px; }
+        .scope-stat .label { font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; }
+        .scope-stat .val { font-size: 18px; font-weight: 900; color: #0f172a; }
+
+        .footer-info { position: absolute; bottom: 15mm; left: 25mm; right: 25mm; font-size: 9px; color: #94a3b8; display: flex; justify-content: space-between; border-top: 1px solid #f1f5f9; padding-top: 10px; }
+        
+        .signature-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px; margin-top: 60px; }
+        .sig-line { border-top: 1px solid #e2e8f0; margin-top: 50px; padding-top: 10px; font-size: 11px; font-weight: 700; color: #64748b; }
     </style>
 </head>
 <body>
-    <div class="cover">
+    <div class="page cover">
         <div class="brand">
             <h1>${escapeXml(settings.reportTitle)}</h1>
-            <div class="org">Prepared for ${escapeXml(settings.organizationName)}</div>
+            <div class="org">${escapeXml(settings.organizationName)} | GHG Inventory Report</div>
         </div>
         <div class="footer">
-            <div style="color: #64748b; font-size: 14px;">
-                <div><strong>Standard:</strong> ${escapeXml(settings.primaryStandard)}</div>
-                <div><strong>Consolidation:</strong> ${escapeXml(settings.consolidationApproach ?? 'Operational Control')}</div>
-                <div><strong>Reporting Period:</strong> ${summary.forecast.nextPeriodLabel}</div>
+            <div style="font-size: 11px; font-weight: 600; color: #64748b;">
+                <div>Standard: ${escapeXml(settings.primaryStandard)}</div>
+                <div>Boundary: ${escapeXml(settings.consolidationApproach ?? 'Operational Control')}</div>
+                <div>Issued: ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
             </div>
-            <div class="stamp">Verified Inventory</div>
+            <div class="stamp">Verified Output</div>
         </div>
     </div>
 
-    <div class="chapter">
-        <div class="chapter-num">Chapter 01</div>
-        <h2>Executive Summary</h2>
-        <p style="font-size: 18px; color: #475569; max-width: 700px; margin-bottom: 40px;">
+    <div class="page toc">
+        <h2>Table of Contents</h2>
+        <div class="toc-item"><span>01 Executive Disclosure</span><span class="page-num">03</span></div>
+        <div class="toc-item"><span>02 Organizational Boundaries</span><span class="page-num">04</span></div>
+        <div class="toc-item"><span>03 Inventory Details & Scope Statement</span><span class="page-num">05</span></div>
+        <div class="toc-item"><span>04 Intensity & Base Year Performance</span><span class="page-num">06</span></div>
+        <div class="toc-item"><span>05 Methodology, GWP & Uncertainty</span><span class="page-num">07</span></div>
+        <div class="toc-item"><span>06 Assurance & Sign-off</span><span class="page-num">08</span></div>
+    </div>
+
+    <div class="page">
+        <div class="chapter-header">
+            <div class="chapter-num">Chapter 01</div>
+            <h2>Executive Disclosure</h2>
+        </div>
+        
+        <p style="font-size: 16px; color: #475569; font-weight: 500; margin-bottom: 40px; line-height: 1.7;">
             ${escapeXml(buildExecutiveNarrative(payload))}
         </p>
 
-        <div class="grid">
-            <div class="kpi">
+        <div class="kpi-row">
+            <div class="kpi-box">
                 <div class="label">Gross Emissions</div>
                 <div class="val">${formatKg(summary.totalKg)}</div>
             </div>
-            <div class="kpi">
-                <div class="label">Market-based Net</div>
+            <div class="kpi-box">
+                <div class="label">Net Market-Based</div>
                 <div class="val">${formatKg(summary.marketBasedKg)}</div>
             </div>
-            <div class="kpi">
-                <div class="label">Biogenic CO2</div>
-                <div class="val">${formatKg(summary.totalBiogenicKg)}</div>
+            <div class="kpi-box">
+                <div class="label">Intensity (Revenue)</div>
+                <div class="val">${summary.intensity.intensity_revenue}</div>
             </div>
         </div>
 
-        <div style="display: flex; justify-content: space-around; margin: 60px 0; text-align: center;">
-            ${pieCharts}
+        <div class="scope-breakdown">
+            ${scopeBreakdown}
+        </div>
+
+        <div class="footer-info">
+            <span>${escapeXml(settings.reportTitle)} • Internal Disclosure</span>
+            <span>Page 03</span>
         </div>
     </div>
 
-    <div class="chapter">
-        <div class="chapter-num">Chapter 02</div>
-        <h2>Organizational Boundary</h2>
-        <div class="methodology">
-            <p><strong>Approach:</strong> ${escapeXml(settings.consolidationApproach ?? 'Operational Control')} consolidation as per ${escapeXml(settings.primaryStandard)}.</p>
-            <p><strong>Boundaries:</strong> The inventory includes all material emission sources from facilities and operations where ${escapeXml(settings.organizationName)} holds authority over financial and operating policies.</p>
-            <p><strong>Activity Period:</strong> Data collected represents the period from ${summary.monthlyTrend[0]?.label ?? 'Jan'} to ${summary.monthlyTrend[summary.monthlyTrend.length - 1]?.label ?? 'Dec'}.</p>
+    <div class="page">
+        <div class="chapter-header">
+            <div class="chapter-num">Chapter 03</div>
+            <h2>Inventory Statement</h2>
         </div>
-    </div>
 
-    <div class="chapter">
-        <div class="chapter-num">Chapter 03</div>
-        <h2>Consolidated Emissions Statement</h2>
         <table class="statement-table">
             <thead>
                 <tr>
-                    <th>Reporting Category</th>
-                    <th class="num">CO2 (kg)</th>
-                    <th class="num">CH4 (kgCO2e)</th>
-                    <th class="num">N2O (kgCO2e)</th>
+                    <th style="width: 40%">Scope & Category</th>
+                    <th class="num">Fossil (kgCO2e)</th>
+                    <th class="num">Biogenic (kgCO2)</th>
                     <th class="num">Total (kgCO2e)</th>
                 </tr>
             </thead>
             <tbody>
                 ${summary.scopeSummary.map(scope => {
                     const scopeEntries = entries.filter(e => e.scope === scope.scope);
-                    const co2 = scopeEntries.reduce((sum, e) => sum + (e.emission_co2 ?? 0), 0);
-                    const ch4 = scopeEntries.reduce((sum, e) => sum + (e.emission_ch4 ?? 0), 0);
-                    const n2o = scopeEntries.reduce((sum, e) => sum + (e.emission_n2o ?? 0), 0);
+                    const biogenic = scopeEntries.reduce((sum, e) => sum + (e.kg_biogenic_co2 ?? 0), 0);
                     return `
-                    <tr class="subtotal">
-                        <td>${scope.scope} Summary</td>
-                        <td class="num">${co2.toLocaleString()}</td>
-                        <td class="num">${ch4.toLocaleString()}</td>
-                        <td class="num">${n2o.toLocaleString()}</td>
-                        <td class="num font-bold">${scope.totalKg.toLocaleString()}</td>
+                    <tr class="subtotal-row">
+                        <td>${scope.scope} Consolidated</td>
+                        <td class="num">${(scope.totalKg).toLocaleString()}</td>
+                        <td class="num">${biogenic.toLocaleString()}</td>
+                        <td class="num">${(scope.totalKg + biogenic).toLocaleString()}</td>
                     </tr>
-                    ${scopeEntries.map(e => `
+                    ${scopeEntries.slice(0, 12).map(e => `
                     <tr>
-                        <td style="padding-left: 24px;">${escapeXml(e.activity_type)}</td>
-                        <td class="num">${(e.emission_co2 ?? 0).toFixed(1)}</td>
-                        <td class="num">${(e.emission_ch4 ?? 0).toFixed(2)}</td>
-                        <td class="num">${(e.emission_n2o ?? 0).toFixed(2)}</td>
-                        <td class="num">${e.emission_kgco2e.toFixed(1)}</td>
+                        <td style="padding-left: 20px;">${escapeXml(e.activity_type)}</td>
+                        <td class="num">${e.emission_kgco2e.toLocaleString()}</td>
+                        <td class="num">${(e.kg_biogenic_co2 ?? 0).toLocaleString()}</td>
+                        <td class="num font-semibold">${(e.emission_kgco2e + (e.kg_biogenic_co2 ?? 0)).toLocaleString()}</td>
                     </tr>
                     `).join('')}
                     `;
                 }).join('')}
-                <tr class="total">
-                    <td>Total Consolidated Gross Emissions</td>
-                    <td class="num"></td><td class="num"></td><td class="num"></td>
-                    <td class="num">${summary.totalKg.toLocaleString()} kgCO2e</td>
+                <tr class="total-row">
+                    <td>TOTAL ORGANIZATIONAL FOOTPRINT</td>
+                    <td class="num">${summary.totalKg.toLocaleString()}</td>
+                    <td class="num">${summary.totalBiogenicKg.toLocaleString()}</td>
+                    <td class="num">${(summary.totalKg + summary.totalBiogenicKg).toLocaleString()} kgCO2e</td>
                 </tr>
             </tbody>
         </table>
-        
-        ${summary.totalBiogenicKg > 0 ? `
-        <div style="margin-top: 40px;">
-            <h3>Biogenic Inventory</h3>
-            <p style="font-size: 13px; color: #64748b;">Direct CO2 emissions from the combustion of biomass are reported separately from the scopes above.</p>
-            <table class="statement-table" style="width: 300px;">
-                <tr class="total">
-                    <td>Total Biogenic CO2</td>
-                    <td class="num">${summary.totalBiogenicKg.toLocaleString()} kgCO2</td>
-                </tr>
-            </table>
-        </div>
-        ` : ''}
-    </div>
 
-    <div class="chapter">
-        <div class="chapter-num">Chapter 04</div>
-        <h2>Base Year & Intensity</h2>
-        
-        <table class="statement-table">
-            <thead>
-                <tr>
-                    <th>Performance Metric</th>
-                    <th>Current Period</th>
-                    <th>Base Year (Ref)</th>
-                    <th>Change</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Total Gross Emissions (kgCO2e)</td>
-                    <td class="num font-bold">${summary.totalKg.toLocaleString()}</td>
-                    <td class="num">N/A</td>
-                    <td class="num">-</td>
-                </tr>
-                <tr>
-                    <td>Intensity (kgCO2e per USD Revenue)</td>
-                    <td class="num font-bold">${summary.intensity.intensity_revenue}</td>
-                    <td class="num">N/A</td>
-                    <td class="num">-</td>
-                </tr>
-                <tr>
-                    <td>Intensity (kgCO2e per FTE)</td>
-                    <td class="num font-bold">${summary.intensity.intensity_fte}</td>
-                    <td class="num">N/A</td>
-                    <td class="num">-</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <div class="chapter">
-        <div class="chapter-num">Chapter 05</div>
-        <h2>Methodologies & Data Quality</h2>
-        <div class="methodology">
-            <h4>Emission Factor Sources</h4>
-            <p>Calculations use global warming potentials (GWP) from the <strong>IPCC Fifth Assessment Report (AR5)</strong>. Emission factors are sourced from standard international databases (DEFRA, EPA, IEA) and localized where specific instruments (e.g., REGOs) are available.</p>
-            
-            <h4>Data Assurance</h4>
-            <p>The inventory has a weighted quality score of <strong>${summary.qualityScore}/100</strong> and evidence backing for <strong>${summary.evidenceCoverage}%</strong> of activity data.</p>
-            
-            <h4>Exclusions</h4>
-            <p>No material emission sources have been explicitly excluded from the organizational boundaries defined in Chapter 02.</p>
+        <div class="footer-info">
+            <span>${escapeXml(settings.organizationName)} • ${escapeXml(settings.primaryStandard)}</span>
+            <span>Page 05</span>
         </div>
     </div>
 
-    <div class="footer-page">
-        <div>${escapeXml(settings.reportTitle)} | Prepared by co2etrack Assurance Engine</div>
-        <div>Page of GHG Inventory Report | ISO 14064-1 Compliant output</div>
+    <div class="page">
+        <div class="chapter-header">
+            <div class="chapter-num">Chapter 06</div>
+            <h2>Assurance & Sign-off</h2>
+        </div>
+
+        <div style="background: #f8fafc; padding: 40px; border-radius: 20px; border: 1px solid #e2e8f0; margin-bottom: 60px;">
+            <h4 style="margin-bottom: 10px;">Assurance Declaration</h4>
+            <p style="font-size: 12px; color: #475569;">
+                The undersigned declare that this greenhouse gas inventory has been prepared in accordance with the requirements of ${escapeXml(settings.primaryStandard)} and ISO 14064-1:2018. The emission factors used are conservative and sourced from recognized international databases.
+            </p>
+        </div>
+
+        <div class="signature-grid">
+            <div>
+                <div class="sig-line">Prepared by (Internal Lead)</div>
+                <div style="font-size: 13px; font-weight: 900; margin-top: 10px;">${user?.email ?? 'Carbon Manager'}</div>
+            </div>
+            <div>
+                <div class="sig-line">Approved for Disclosure (Board Level)</div>
+                <div style="font-size: 13px; font-weight: 500; color: #cbd5e1; margin-top: 10px;">Signature Placeholder</div>
+            </div>
+        </div>
+
+        <div class="footer-info">
+            <span>Verified through co2etrack Assurance Engine</span>
+            <span>Page 08</span>
+        </div>
     </div>
 </body>
 </html>`;

@@ -352,12 +352,15 @@ export function buildWorkspaceSummary(
     floor_area_sqm: area,
     intensity_revenue: round(totalKg / Math.max(revenue, 1), 4),
     intensity_fte: round(totalKg / Math.max(fte, 1), 2),
+    carbon_intensity_area: round(totalKg / Math.max(area, 1), 2),
   };
 
   return {
     totalKg: round(totalKg, 2),
     totalBiogenicKg: round(totalBiogenicKg, 2),
     marketBasedKg: round(marketBasedKg, 2),
+    netEmissionsKg: round(totalKg + totalBiogenicKg, 2),
+    fossilEmissionsKg: round(totalKg, 2),
     qualityScore,
     evidenceCoverage,
     verifiedShare: entries.length === 0 ? 0 : round((verifiedEntries / entries.length) * 100, 1),
@@ -370,5 +373,34 @@ export function buildWorkspaceSummary(
     reductionOpportunities: buildReductionOpportunities(entries),
     checklist: buildComplianceChecklist(entries),
     statusCounts,
+  };
+}
+
+export interface ScenarioInput {
+  targetCategory: string;
+  reductionPercent: number;
+}
+
+export function simulateScenario(summary: WorkspaceSummary, scenario: ScenarioInput): WorkspaceSummary {
+  const reductionFactor = 1 - (scenario.reductionPercent / 100);
+  
+  const updatedEntries = summary.topDrivers.map(driver => {
+    if (driver.label === scenario.targetCategory) {
+      return { ...driver, totalKg: driver.totalKg * reductionFactor };
+    }
+    return driver;
+  });
+
+  const newTotalKg = updatedEntries.reduce((sum, d) => sum + d.totalKg, 0);
+  
+  return {
+    ...summary,
+    totalKg: round(newTotalKg, 2),
+    intensity: {
+      ...summary.intensity,
+      intensity_revenue: round(newTotalKg / Math.max(summary.intensity.revenue_usd, 1), 4),
+      intensity_fte: round(newTotalKg / Math.max(summary.intensity.fte_count, 1), 2),
+    },
+    topDrivers: updatedEntries.sort((a,b) => b.totalKg - a.totalKg),
   };
 }

@@ -19,6 +19,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { useWorkspaceSettings } from '@/hooks/useWorkspaceSettings';
 import { cn } from '@/lib/utils';
+import AuditCopilot from '@/components/AuditCopilot';
 
 const NAV_ITEMS = [
   { to: '/', label: 'Command center', icon: BarChart3 },
@@ -157,6 +158,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8">{children}</main>
         </div>
       </div>
+      <AuditCopilot />
     </div>
   );
 }

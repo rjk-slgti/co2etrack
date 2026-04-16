@@ -96,6 +96,7 @@ export interface IntensityMetrics {
   floor_area_sqm: number;
   intensity_revenue: number;
   intensity_fte: number;
+  carbon_intensity_area: number;
 }
 
 export interface ScopeSummary {
@@ -155,6 +156,8 @@ export interface WorkspaceSummary {
   totalKg: number;
   totalBiogenicKg: number;
   marketBasedKg: number;
+  netEmissionsKg: number;
+  fossilEmissionsKg: number;
   qualityScore: number;
   evidenceCoverage: number;
   verifiedShare: number;

@@ -671,12 +671,14 @@ export default function DataEntry() {
                   )}
 
                   {varianceInsight && (
-                    <div className="rounded-2xl border border-amber-400/30 bg-amber-500/15 p-4 text-sm text-white">
-                      <div className="flex items-start gap-3">
-                        <AlertTriangle className="mt-0.5 h-4 w-4 text-amber-200" />
+                    <div className="rounded-3xl border border-white/20 bg-white/10 p-6 text-sm text-white backdrop-blur-md shadow-2xl animate-in zoom-in-95 duration-500">
+                      <div className="flex items-start gap-4">
+                        <div className="h-10 w-10 rounded-2xl bg-primary flex items-center justify-center shadow-lg">
+                          <BrainCircuit className="h-6 w-6 text-white" />
+                        </div>
                         <div>
-                          <p className="font-semibold">AI review signal</p>
-                          <p className="mt-1 text-white/80">{varianceInsight.message}</p>
+                          <p className="font-black text-[10px] uppercase tracking-widest text-white/50 mb-1">Plausibility Signal</p>
+                          <p className="font-bold text-sm leading-tight">{varianceInsight.message}</p>
                         </div>
                       </div>
                     </div>
@@ -688,23 +690,23 @@ export default function DataEntry() {
 
           <WizardSection
             step="04"
-            title="Evidence, notes, and final routing"
-            description="Attach support files, capture assumptions, and either save a draft or submit to the audit queue."
+            title="Assurance artifacts and final routing"
+            description="Attach primary evidence and capture audit assumptions for the reviewer."
           >
-            <div className="grid gap-4 lg:grid-cols-[1fr_0.95fr]">
+            <div className="grid gap-6 lg:grid-cols-[1fr_0.95fr]">
               <Field label="Audit notes and assumptions">
                 <Textarea
-                  className="min-h-[180px]"
-                  placeholder="Document meter assumptions, supplier references, estimation methods, or reviewer notes."
+                  className="min-h-[180px] rounded-2xl border-slate-200 focus-visible:ring-primary"
+                  placeholder="Document meter assumptions, supplier references, or reviewer flags..."
                   value={draft.notes}
                   onChange={(event) => setDraftField('notes', event.target.value)}
                 />
               </Field>
-              <div className="space-y-2">
-                <Label>Evidence upload</Label>
+              <div className="space-y-3">
+                <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Evidence Vault</Label>
                 <label
-                  className={`flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed p-6 text-center transition ${
-                    isDragging ? 'border-primary bg-primary/10' : 'border-border bg-background/70'
+                  className={`flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-[32px] border-2 border-dashed p-8 text-center transition-all ${
+                    isDragging ? 'border-primary bg-primary/5' : 'border-slate-200 bg-slate-50/50 hover:bg-slate-50'
                   }`}
                   onDragOver={(event) => {
                     event.preventDefault();
@@ -723,80 +725,63 @@ export default function DataEntry() {
                     className="hidden"
                     onChange={(event) => setEvidenceFile(event.target.files?.[0] ?? null)}
                   />
-                  <FileUp className="h-8 w-8 text-primary" />
-                  <p className="mt-3 font-semibold text-foreground">
-                    {evidenceFile ? evidenceFile.name : 'Drop invoices, bills, or spreadsheets here'}
+                  <div className="h-14 w-14 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center mb-4">
+                    <FileUp className="h-7 w-7 text-slate-400" />
+                  </div>
+                  <p className="font-black text-slate-900">
+                    {evidenceFile ? evidenceFile.name : 'Upload Source Document'}
                   </p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Drag and drop or click to upload evidence for the audit trail.
+                  <p className="mt-2 text-xs text-slate-400 font-medium px-10">
+                    Drag and drop invoices or utility bills to boost audit assurance.
                   </p>
                 </label>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-4 pt-4">
               <Button
                 type="button"
                 variant="outline"
-                className="rounded-full"
+                className="rounded-2xl h-12 px-8 font-bold border-slate-200"
                 onClick={() => handleSubmit('draft')}
                 disabled={createEntry.isPending || uploadEvidence.isPending}
               >
                 <Save className="mr-2 h-4 w-4" />
-                Save draft
+                Save to Drafts
               </Button>
               <Button
                 type="button"
-                className="rounded-full"
+                className="rounded-2xl h-12 px-10 bg-slate-900 hover:bg-slate-800 text-white font-black shadow-xl shadow-slate-200"
                 onClick={() => handleSubmit('pending_audit')}
                 disabled={createEntry.isPending || uploadEvidence.isPending}
               >
                 <Wand2 className="mr-2 h-4 w-4" />
-                Submit for audit review
-              </Button>
-              <Button type="button" variant="ghost" className="rounded-full" onClick={resetDraft}>
-                Reset form
+                Submit to Audit Queue
               </Button>
             </div>
           </WizardSection>
         </div>
 
-        <div className="space-y-6">
-          <Card className="border-border/70 bg-card/80 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Sparkles className="h-5 w-5 text-primary" />
-                Guided workflow
+        <div className="space-y-8">
+          <Card className="border-slate-200 shadow-xl rounded-[40px] bg-white overflow-hidden ring-1 ring-slate-100">
+            <CardHeader className="p-8 border-b border-slate-50 bg-slate-50/30">
+              <CardTitle className="flex items-center gap-3 text-xl font-black">
+                <Sparkles className="h-6 w-6 text-primary" />
+                Audit Intelligence
               </CardTitle>
-              <CardDescription>Each step is designed so a non-specialist can finish an audit pack quickly.</CardDescription>
+              <CardDescription className="text-slate-500 font-medium italic">Contextual guidance based on your activity clusters.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {[
-                'Choose the reporting boundary and source document.',
-                'Map the activity to the right scope and category.',
-                'Review the live factor match and anomaly checks.',
-                'Attach evidence and route the record for approval.',
-              ].map((step, index) => (
-                <div key={step} className="flex items-start gap-3 rounded-2xl border border-border/70 bg-background/80 p-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
-                    {index + 1}
-                  </div>
-                  <p className="text-sm text-muted-foreground">{step}</p>
-                </div>
-              ))}
+            <CardContent className="p-8 space-y-6">
+              <SuggestionCard
+                title="Consolidate by Site"
+                detail="Recording activity by site (HQ vs Plant) allows for more granular intensity normalization."
+              />
+              <SuggestionCard
+                title="Upload PDF evidence"
+                detail="Machine-readable PDFs allow the Copilot to extract billing values 70% faster."
+              />
             </CardContent>
           </Card>
-
-          <Card className="border-border/70 bg-card/80 shadow-sm">
-            <CardHeader>
-              <CardTitle>Smart suggestions</CardTitle>
-              <CardDescription>Contextual guidance based on the current draft and your recent activity history.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <SuggestionCard
-                title="Use specific evidence names"
-                detail="Uploading bills or supplier spreadsheets with descriptive names makes review much faster."
-              />
               <SuggestionCard
                 title="Prefer supplier-specific factors for material categories"
                 detail="If supplier EPDs or metered studies exist, store them as custom factors to replace proxy assumptions."
