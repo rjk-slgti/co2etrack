@@ -1,73 +1,47 @@
-# CO2eTrack
+# CO2etrack // CCUS Traceability Platform
 
-CO2eTrack is a React + Supabase carbon auditing workspace for scopes 1, 2, and 3. The app now includes:
+Professional, regulator-defensible carbon accounting and molecular-level traceability system built for **C44DEV SA (Geneva)**.
 
-- A guided carbon audit wizard with autosave, live factor matching, anomaly hints, and evidence upload
-- An audit center for validation, verification, and approval workflow actions
-- A factor library with official and custom emission factors
-- A report generator with printable PDF output and Excel workbook export
-- Supabase schema upgrades for audit projects, checklist items, findings, custom factors, report jobs, and richer activity entry metadata
+## 🏗️ Architecture: High-Fidelity Monorepo
 
-## Architecture
-
-- `src/pages`
-  Main product surfaces: dashboard, audit wizard, audit center, reports, factor library, trail, settings
-- `src/hooks`
-  Data access, workspace settings, Supabase fallbacks, and audit workspace composition
-- `src/lib`
-  Calculation engine, analytics, reporting/export helpers, demo data, and local fallback storage
-- `supabase/migrations`
-  Core schema, GHG factor dataset, legacy bridge, and the auditing/reporting upgrade
-- `supabase/functions/sync-emission-factors`
-  Edge function for syncing electricity emission factors from public open data
-
-## Supabase rollout
-
-Run migrations in order:
-
-```bash
-supabase db push
+```mermaid
+graph TD
+    Root["co2etrack/ (Turborepo)"]
+    Root --> Apps["apps/"]
+    Apps --> Web["web/ (Next.js Dashboard)"]
+    Apps --> Marketing["marketing/ (C44DEV Landing)"]
+    Apps --> API["api/ (FastAPI Scientific Core)"]
+    Root --> Pkg["packages/"]
+    Pkg --> DB["db/ (TimescaleDB Schema)"]
 ```
 
-Important migrations for this upgrade:
+## 🛠️ Core Scientific Pillars
 
-- `20260416000001_ghg2025_schema.sql`
-- `20260416000004_ghg_legacy_bridge.sql`
-- `20260416000005_audit_reporting_upgrade.sql`
+1.  **Molecular Provenance**: Physical-digital linkage using patented chemical markers detected at every value chain node.
+2.  **Uncertainty Engine**: Monte Carlo (N=10,000) simulations providing 95% Confidence Intervals (P95) for all removal batches.
+3.  **Digital MRV**: Automated issuance of W3C Verifiable Credentials for cryptographically secure carbon certificates.
 
-Optional edge function deployment:
+## 🚀 Getting Started
 
+### Prerequisites
+- Node.js 24 + Bun
+- Python 3.12 (with SciPy/Pandas)
+- PostgreSQL (with TimescaleDB extension)
+
+### Development
 ```bash
-supabase functions deploy sync-emission-factors
-```
-
-## Local development
-
-1. Install Node.js or Bun.
-2. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` to `.env`.
-3. Start the app:
-
-```bash
+# Install dependencies
 npm install
+
+# Start all modules (Web, Marketing, API)
 npm run dev
 ```
 
-If Supabase credentials are unavailable, the app falls back to a demo workspace with seeded entries, factors, and audit logs so the UI remains usable.
+## 🛡️ Professional Readiness
+- **ISO 14064-1/2** methodology alignment.
+- **Eu ETS / Verra** registry compatibility.
+- **SOC 2 Type 1** security controls (RLS isolation, Audit Logs).
 
-## Testing
+---
 
-Run the test suite once Node.js is available:
-
-```bash
-npm test
-```
-
-## Report generation
-
-- PDF: open the report preview and use the browser print flow
-- Excel: downloads an Excel-compatible workbook containing the executive summary and detailed inventory
-
-## Notes
-
-- The workspace settings page stores report defaults locally for fast iteration during prototyping.
-- Critical calculation, analytics, and reporting utilities are covered by Vitest tests in `src/lib/*.test.ts`.
+**© 2026 C44DEV SA // Geneva, Switzerland**

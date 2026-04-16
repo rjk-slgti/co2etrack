@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 210 50% 98%;
+  --foreground: 222 47% 11%;
+
+  --primary: 120 100% 20%; /* Deep Green #006400 */
+  --primary-foreground: 0 0% 100%;
+  
+  --secondary: 217 33% 17%; /* Carbon Blue */
+  --secondary-foreground: 210 40% 98%;
+
+  --accent: 180 100% 35%; /* Molecular Cyan */
+  --accent-foreground: 210 40% 98%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 120 100% 20%;
+
+  --radius: 1.25rem;
+}
+
+.dark {
+  --background: 222 47% 6%;
+  --foreground: 210 40% 98%;
+
+  --primary: 120 100% 25%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 217 33% 12%;
+  --secondary-foreground: 210 40% 98%;
+
+  --card: 222 47% 8%;
+  --card-foreground: 210 40% 98%;
+
+  --border: 217 33% 15%;
+  --input: 217 33% 15%;
+  --ring: 120 100% 25%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  .ccus-glass {
+    @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_0_rgba(0,100,0,0.05)];
+  }
+  .dark .ccus-glass {
+    @apply bg-slate-900/50 backdrop-blur-xl border border-white/5 shadow-2xl;
+  }
+  
+  .molecular-gradient {
+    @apply bg-gradient-to-br from-[#006400] via-[#0f172a] to-[#008080];
+  }
+}
