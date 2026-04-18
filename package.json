@@ -11,6 +11,7 @@
   "scripts": {
     "dev": "turbo run dev --filter=web --",
     "build": "turbo run build",
+    "build:dev": "turbo run build",
     "lint": "turbo run lint",
     "web:dev": "npm run dev --workspace=web",
     "api:dev": "cd apps/api && .venv/Scripts/python -m uvicorn main:app --reload",
