@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import { Beaker, Droplets, Info, Plus, Save, Shield, Thermometer, Wind } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
@@ -232,5 +232,25 @@ export default function CaptureWizard() {
         </div>
       </div>
     </main>
+  );
+}
+
+function Badge({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <span className={cn("inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset", className)}>
+      {children}
+    </span>
+  );
+}
+
+function Tooltip({ content }: { content: string }) {
+  return (
+    <span
+      title={content}
+      aria-label={content}
+      className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-slate-200 text-[10px] font-black text-slate-400"
+    >
+      ?
+    </span>
   );
 }
