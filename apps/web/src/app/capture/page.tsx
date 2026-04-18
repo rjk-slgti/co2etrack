@@ -242,3 +242,15 @@ function Badge({ children, className }: { children: ReactNode; className?: strin
     </span>
   );
 }
+
+function Tooltip({ content }: { content: string }) {
+  return (
+    <span
+      title={content}
+      aria-label={content}
+      className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-slate-200 text-[10px] font-black text-slate-400"
+    >
+      ?
+    </span>
+  );
+}
